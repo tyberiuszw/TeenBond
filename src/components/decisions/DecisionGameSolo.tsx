@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getScenario, DecisionItemDef } from '@/lib/decisions/scenarios';
 import { getMockSoloSubmissions } from '@/lib/decisions/mockSubmissions';
 import { useDemoStore } from '@/lib/demo-store';
@@ -57,25 +57,7 @@ export function DecisionGameSolo({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Timer interval
-  useEffect(() => {
-    if (!timerActive || isLocked || secondsRemaining <= 0) return;
-
-    const interval = setInterval(() => {
-      setSecondsRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          handleAutoSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [timerActive, isLocked, secondsRemaining]);
-
-  const handleAutoSubmit = () => {
+  const handleAutoSubmit = useCallback(() => {
     setIsLocked(true);
     const mockSubs = getMockSoloSubmissions(scenarioId, activeUserId, itemIds);
     const subs: Record<string, string[]> = {
@@ -85,7 +67,23 @@ export function DecisionGameSolo({
     };
     setSoloSubmissions(subs);
     onCompleteSolo(itemIds, subs);
-  };
+  }, [scenarioId, activeUserId, itemIds, soloSubmissions, onCompleteSolo]);
+
+  // Timer interval
+  useEffect(() => {
+    if (!timerActive || isLocked || secondsRemaining <= 0) return;
+
+    const timer = setTimeout(() => {
+      if (secondsRemaining <= 1) {
+        setSecondsRemaining(0);
+        handleAutoSubmit();
+      } else {
+        setSecondsRemaining((prev) => prev - 1);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [timerActive, isLocked, secondsRemaining, handleAutoSubmit]);
 
   const handleManualSubmit = () => {
     setIsLocked(true);

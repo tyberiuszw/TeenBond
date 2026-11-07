@@ -6,7 +6,7 @@ import { allocateClues, partitionMurderMysteryRoleAndClues } from '../../src/lib
 import { useTeenBoardStore } from '../../src/lib/board/teenboard-store';
 import { useDemoStore } from '../../src/lib/demo-store';
 import { getDataClient } from '../../src/lib/data-client';
-import { GET as healthCheckGet } from '../../src/app/api/health/route';
+import { GET as healthCheckGet, dynamic as healthCheckDynamic } from '../../src/app/api/health/route';
 
 const ROOT_DIR = path.resolve(__dirname, '../..');
 
@@ -198,8 +198,19 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
       expect(dockerfile).toContain('ARG NEXT_PUBLIC_SUPABASE_ANON_KEY');
       expect(dockerfile).toContain('ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL');
       expect(dockerfile).toContain('ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY');
+      const builderIdx = dockerfile.indexOf('FROM base AS builder');
+      const buildCmdIdx = dockerfile.indexOf('RUN npm run build');
+      expect(dockerfile.indexOf('ARG NEXT_PUBLIC_SUPABASE_URL')).toBeGreaterThan(builderIdx);
+      expect(dockerfile.indexOf('ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL')).toBeLessThan(buildCmdIdx);
+      expect(dockerfile.indexOf('ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY')).toBeLessThan(buildCmdIdx);
       expect(dockerfile).toContain('.next/standalone');
       expect(dockerfile).toContain('CMD ["node", "server.js"]');
+
+      const eslintConfigPath = path.join(ROOT_DIR, '.eslintrc.json');
+      expect(fs.existsSync(eslintConfigPath)).toBe(true);
+      const eslintConfig = JSON.parse(fs.readFileSync(eslintConfigPath, 'utf-8'));
+      expect(eslintConfig.extends).toBe('next/core-web-vitals');
+      expect(eslintConfig.rules?.['react-hooks/exhaustive-deps']).toBeUndefined();
 
       const railwayConfig = JSON.parse(fs.readFileSync(railwayJsonPath, 'utf-8'));
       expect(railwayConfig.build.builder).toBe('DOCKERFILE');
@@ -207,7 +218,8 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
       expect(railwayConfig.deploy.healthcheckPath).toBe('/api/health');
     });
 
-    it('returns 200 OK from /api/health endpoint', async () => {
+    it('returns 200 OK from dynamic /api/health endpoint', async () => {
+      expect(healthCheckDynamic).toBe('force-dynamic');
       const response = await healthCheckGet();
       expect(response.status).toBe(200);
       const body = await response.json();

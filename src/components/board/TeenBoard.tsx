@@ -90,16 +90,26 @@ export const TeenBoard: React.FC<TeenBoardProps> = ({
     return () => {
       disconnectRoom();
     };
-  }, [roomId, currentUserId, isReadOnly, setRoomId, setReadOnly, connectRoom, disconnectRoom]);
+  }, [
+    roomId,
+    currentUserId,
+    isReadOnly,
+    members,
+    getActiveUser,
+    setRoomId,
+    setReadOnly,
+    connectRoom,
+    disconnectRoom,
+  ]);
 
   // Load initial elements or default demo elements
   useEffect(() => {
     if (initialElements && initialElements.length > 0) {
       loadElements(initialElements);
-    } else if (Object.keys(elements).length === 0) {
+    } else if (Object.keys(useTeenBoardStore.getState().elements).length === 0) {
       loadElements(DEMO_TEENBOARD_ELEMENTS as BoardElement[]);
     }
-  }, [initialElements]);
+  }, [initialElements, loadElements]);
 
   // Notify parent of element changes if callback provided
   useEffect(() => {

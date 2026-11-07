@@ -113,11 +113,12 @@ export function MotivatorCard({
           >
             {/* Card Front Image */}
             <div className="relative w-full h-full">
-              <img
+              <Image
                 src={frontImageUrl}
                 alt={`${card.namePl} - Awers`}
+                fill
+                unoptimized
                 className="w-full h-full object-cover"
-                loading="lazy"
               />
 
               {/* Top Bar Overlay */}
@@ -179,11 +180,12 @@ export function MotivatorCard({
           >
             {/* Background texture or back image */}
             <div className="relative w-full h-full">
-              <img
+              <Image
                 src={backImageUrl}
                 alt={`${card.namePl} - Rewers`}
+                fill
+                unoptimized
                 className="w-full h-full object-cover opacity-35"
-                loading="lazy"
               />
 
               {/* Glassmorphic content container */}
@@ -292,10 +294,13 @@ export function MotivatorCard({
 
             {/* Image & Definitions split */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
-              <div className="aspect-[2/3] max-h-80 w-auto mx-auto rounded-2xl overflow-hidden border border-slate-700 shadow-xl bg-slate-950">
-                <img
+              <div className="relative aspect-[2/3] max-h-80 w-auto mx-auto rounded-2xl overflow-hidden border border-slate-700 shadow-xl bg-slate-950">
+                <Image
                   src={isFlipped ? backImageUrl : frontImageUrl}
                   alt={card.namePl}
+                  width={320}
+                  height={480}
+                  unoptimized
                   className="w-full h-full object-cover"
                 />
               </div>

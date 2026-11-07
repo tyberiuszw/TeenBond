@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TeenBoard } from '@/components/board/TeenBoard';
 import { KalamburyChatPanel } from './KalamburyChatPanel';
 import { KalamburyWordSelectModal } from './KalamburyWordSelectModal';
@@ -60,23 +60,33 @@ export const KalamburyContainer: React.FC = () => {
     ? selectedWord.word
     : generateMaskedWord(selectedWord.word, revealCount);
 
+  const handleRoundEnd = useCallback(() => {
+    setIsTimerRunning(false);
+
+    if (roundNumber >= totalRounds) {
+      setShowPodiumModal(true);
+    } else {
+      setRoundNumber((r) => r + 1);
+      setCurrentDrawerIndex((idx) => (idx + 1) % members.length);
+      setShowWordSelectModal(true);
+    }
+  }, [roundNumber, totalRounds, members.length]);
+
   // Timer tick
   useEffect(() => {
     if (!isTimerRunning || timeLeft <= 0) return;
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleRoundEnd();
-          return 0;
-        }
-        return prev - 1;
-      });
+    const timer = setTimeout(() => {
+      if (timeLeft <= 1) {
+        setTimeLeft(0);
+        handleRoundEnd();
+      } else {
+        setTimeLeft((prev) => prev - 1);
+      }
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [isTimerRunning, timeLeft]);
+    return () => clearTimeout(timer);
+  }, [isTimerRunning, timeLeft, handleRoundEnd]);
 
   // Simulated bot guess at t=38s if user hasn't guessed
   useEffect(() => {
@@ -131,18 +141,6 @@ export const KalamburyContainer: React.FC = () => {
 
   const handleSendMessage = (msg: KalamburyChatMessage) => {
     setMessages((prev) => [...prev, msg]);
-  };
-
-  const handleRoundEnd = () => {
-    setIsTimerRunning(false);
-
-    if (roundNumber >= totalRounds) {
-      setShowPodiumModal(true);
-    } else {
-      setRoundNumber((r) => r + 1);
-      setCurrentDrawerIndex((idx) => (idx + 1) % members.length);
-      setShowWordSelectModal(true);
-    }
   };
 
   return (
