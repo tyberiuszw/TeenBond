@@ -204,7 +204,7 @@ export default function TeamPage() {
 
                   {/* Description */}
                   <p className="text-xs text-slate-300 leading-relaxed italic">
-                    "{member.description}"
+                    &quot;{member.description}&quot;
                   </p>
 
                   {/* Highlights / Badges */}

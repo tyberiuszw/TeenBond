@@ -409,7 +409,7 @@ export function DecisionSummaryScreen({
                             </p>
                             {rationale?.rationaleEn && (
                               <p className="text-[11px] text-slate-400 italic pt-1 border-t border-slate-800">
-                                "{rationale.rationaleEn}"
+                                &quot;{rationale.rationaleEn}&quot;
                               </p>
                             )}
                           </div>

@@ -194,6 +194,10 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
 
       const dockerfile = fs.readFileSync(dockerfilePath, 'utf-8');
       expect(dockerfile).toContain('FROM node:22-alpine');
+      expect(dockerfile).toContain('ARG NEXT_PUBLIC_SUPABASE_URL');
+      expect(dockerfile).toContain('ARG NEXT_PUBLIC_SUPABASE_ANON_KEY');
+      expect(dockerfile).toContain('ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL');
+      expect(dockerfile).toContain('ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY');
       expect(dockerfile).toContain('.next/standalone');
       expect(dockerfile).toContain('CMD ["node", "server.js"]');
 

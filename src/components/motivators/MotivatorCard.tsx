@@ -233,7 +233,7 @@ export function MotivatorCard({
                       Official wording (EN):
                     </span>
                     <p className="text-[11px] text-slate-300 italic leading-snug">
-                      "{card.definitionEn}"
+                      &quot;{card.definitionEn}&quot;
                     </p>
                   </div>
                 </div>
@@ -315,7 +315,7 @@ export function MotivatorCard({
                     Definicja oryginalna (EN):
                   </span>
                   <p className="text-xs text-slate-300 italic leading-relaxed">
-                    "{card.definitionEn}"
+                    &quot;{card.definitionEn}&quot;
                   </p>
                 </div>
 

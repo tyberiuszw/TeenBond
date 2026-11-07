@@ -64,7 +64,7 @@ export function NodeInspector({ selectedNode, selectedEdge, nodes }: NodeInspect
               <span>Deterministyczny Wniosek Diagnostyczny:</span>
             </div>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic">
-              "{selectedNode.tooltipText}"
+              &quot;{selectedNode.tooltipText}&quot;
             </p>
           </div>
 
