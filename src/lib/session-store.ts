@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { UserSession } from '@/types/auth';
 import { OrganizationContext } from '@/types/organization';
 import { useDemoStore } from './demo-store';
+import { isSupabaseConfigured, createClient } from './supabase/client';
 
 interface SessionStoreState {
   session: UserSession | null;
@@ -31,6 +32,12 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
 
   logout: () => {
     useDemoStore.getState().disableDemoMode();
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        void supabase.auth.signOut();
+      } catch {}
+    }
     set({ session: null, activeOrg: null });
   },
 }));

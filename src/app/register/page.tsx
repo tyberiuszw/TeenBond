@@ -42,10 +42,15 @@ export default function RegisterPage() {
 
     try {
       const supabase = createClient();
+      const emailRedirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/auth/callback?next=/onboarding`
+          : undefined;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo,
           data: {
             full_name: fullName,
             chameleon_color: chameleonColor,

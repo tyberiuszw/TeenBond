@@ -19,20 +19,32 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const getRedirectDestination = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get('next') || params.get('redirectTo');
+      if (next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')) {
+        return next;
+      }
+    }
+    return '/path';
+  };
+
   const handleStartDemo = () => {
     enableDemoMode('demo-user-anna');
-    router.push('/path');
+    router.push(getRedirectDestination());
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setLoading(true);
+    const destination = getRedirectDestination();
 
     if (!isSupabaseConfigured()) {
       // In development / demo environment without Supabase, automatically enter Demo mode
       enableDemoMode('demo-user-anna');
-      router.push('/path');
+      router.push(destination);
       return;
     }
 
@@ -59,7 +71,7 @@ export default function LoginPage() {
           orgId: '',
           isDemo: false,
         });
-        router.push('/path');
+        router.push(destination);
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Wystąpił błąd logowania');

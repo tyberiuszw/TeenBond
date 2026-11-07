@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '../brand/Logo';
 import { ChameleonAvatar } from '../brand/ChameleonAvatar';
 import { RoleBadge } from '../ui/RoleBadge';
@@ -22,6 +22,7 @@ import {
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
@@ -174,6 +175,7 @@ export const Navbar: React.FC = () => {
                             onClick={() => {
                               disableDemoMode();
                               setUserDropdownOpen(false);
+                              router.push('/login');
                             }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-300 hover:text-rose-100 hover:bg-rose-950/40 rounded-lg transition-colors"
                           >
@@ -185,6 +187,7 @@ export const Navbar: React.FC = () => {
                             onClick={() => {
                               logout();
                               setUserDropdownOpen(false);
+                              router.push('/login');
                             }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-300 hover:text-rose-100 hover:bg-rose-950/40 rounded-lg transition-colors"
                           >

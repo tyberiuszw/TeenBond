@@ -139,6 +139,7 @@ export const useDemoStore = create<DemoStoreState>((set, get) => ({
   enableDemoMode: (userId = 'demo-user-anna') => {
     if (typeof document !== 'undefined') {
       document.cookie = 'tb_demo_mode=true; path=/; max-age=86400; SameSite=Lax';
+      document.cookie = 'teenbond_demo=true; path=/; max-age=86400; SameSite=Lax';
     }
     if (typeof window !== 'undefined') {
       try {
@@ -155,6 +156,7 @@ export const useDemoStore = create<DemoStoreState>((set, get) => ({
   disableDemoMode: () => {
     if (typeof document !== 'undefined') {
       document.cookie = 'tb_demo_mode=; path=/; max-age=0; SameSite=Lax';
+      document.cookie = 'teenbond_demo=; path=/; max-age=0; SameSite=Lax';
     }
     if (typeof window !== 'undefined') {
       try {

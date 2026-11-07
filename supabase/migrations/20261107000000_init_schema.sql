@@ -224,6 +224,7 @@ AS $$
 $$;
 
 REVOKE EXECUTE ON FUNCTION public.is_org_leader(UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.is_org_leader(UUID) FROM anon;
 GRANT EXECUTE ON FUNCTION public.is_org_leader(UUID) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.is_org_member(org_id UUID)
@@ -245,6 +246,7 @@ AS $$
 $$;
 
 REVOKE EXECUTE ON FUNCTION public.is_org_member(UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.is_org_member(UUID) FROM anon;
 GRANT EXECUTE ON FUNCTION public.is_org_member(UUID) TO authenticated;
 
 -- Automatically provision public.profiles row when a new user signs up in auth.users
@@ -272,6 +274,7 @@ END;
 $$;
 
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM anon, authenticated;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -492,7 +495,25 @@ CREATE POLICY teenboard_elements_update ON public.teenboard_elements
   );
 
 -- ============================================================================
--- 5. SUPABASE REALTIME PUBLICATION
+-- 5. EXPLICIT DATA API TABLE GRANTS (Principle of Least Privilege)
+-- ============================================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+
+GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
+GRANT SELECT ON public.organizations TO anon;
+GRANT SELECT, INSERT, UPDATE ON public.organizations TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.team_members TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.stages TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.game_sessions TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.motivator_rankings TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.decision_submissions TO authenticated;
+GRANT SELECT, INSERT ON public.evaluations TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.relationship_edges TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.teenboard_rooms TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.teenboard_elements TO authenticated;
+
+-- ============================================================================
+-- 6. SUPABASE REALTIME PUBLICATION
 -- ============================================================================
 DO $$
 BEGIN
