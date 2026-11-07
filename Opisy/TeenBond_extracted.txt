@@ -1,0 +1,313 @@
+
+
+I am building an app &quot;TeenBond&quot; for Teenagers. I want the app to be on-line using github supabase and railway if you have better ideas let me know. The whole goal is to help teenagers bond within their team. It is probably a team working on a project or a team building something. The app works that you can bond with a team on-line without leaving your computer. It helps when a team is from different cities or when it's hard to schedule a meeting in real-life. At the beginning you see a landing page to join or to create an organization. If you create an organization you are a founder of it and it allows you to add or accept new team members. When you try to join you need to be accepted by founder of organization.The most important thing is how the app actually works 
+So the Founder/Leader:
+He can pick whether he wants to start a team bonding he can also see a tree or like a connection map between the team members he can also view a motivation cards of each of the members. 
+1. Motivator cards for all the team members they need to select only the ones they want later it will be important for leader thats why he can see all the people profiles and what they selected 
+Rank the Motivator from least to most important then they submit it 
+2. They can select from Lost at Sea or Nasa Moon Survival 
+,, 
+lost-at-sea-instructions-8-19-2015.pdf
+3. Zin Obelisk 
+4. 
+movie_murder_mystery_party_game.pdf
+ 
+Murder_mystery_-_Katrine_Storgaard_Callesen.pdf
+, 
+DraculahasRisenfromGravecommunicationgame-1.pdf
+1. Karty motywacji
+2. Lista 15 przedmiotów
+3. Obelisk zin
+4. Kolejna gra
+Zasady oceny:
+• Lider: Widzi karty osób. Ocenia je po każdej grze w skali 1-5 (na podstawie pytań o zaangażowanie i wsparcie).
+• Członkowie zespołu: Oceniają lidera oraz współpracowników po każdej grze, wybierając z predefiniowanej listy.
+Demo of how app is working without logging available at the dashboard
+TeenBoard 
+1. Core Canvas &amp; Real-Time Collaboration Behavior
+Multi-Page Structure (Frames):
+ A single TeenBoard file acts like a deck of slides called 
+Frames
+. Users can navigate forward and backward between frames, add new frames, duplicate them, or change a frame's background (plain white, lined, dot grid, or graph grid).
+Screen-Size Independence:
+ Everything placed on a board uses a shared internal layout grid rather than relying on the size of a user's screen. Whether one teammate joins from a small smartphone and another joins from a large desktop monitor, sticky notes, drawings, and images appear in the exact same spot relative to the board.
+Live Presence &amp; Cursors:
+ Everyone currently viewing or editing the board appears as an avatar icon at the top of the screen. While moving a mouse, finger, or stylus, other teammates see a live colored cursor labeled with that person's name gliding across the board in real time.
+Conflict-Free Simultaneous Editing:
+ Multiple team members can draw, type, and move items at the exact same moment without overwriting or erasing each other's work. If two people edit different parts of the board simultaneously, both changes appear smoothly on everyone's screen.
+Temporary Object Locking:
+ The moment one user grabs and starts dragging a sticky note, image, or shape, it becomes temporarily locked for other teammates (highlighted with a colored border showing who is moving it) until the first user lets go. This prevents two people from fighting over the same item at once.
+Automatic Cloud Saving &amp; Offline Recovery:
+ Every change saves automatically in the background without a manual &quot;Save&quot; button. If a teammate briefly loses their internet connection, they can keep working, and their edits will automatically sync with the rest of the team once they reconnect.
+2. Detailed Tool Behaviors
+A. Draw Tool
+Input Support:
+ Works seamlessly with a computer mouse, touchscreen finger, or digital stylus. On tablets, palm rejection prevents accidental marks when a user rests their hand on the screen while writing with a stylus.
+Pen Styles &amp; Colors:
+ Users pick from distinct brush styles—such as a crisp fine-tip 
+Pen
+, a thick 
+Marker
+, and a semi-transparent 
+Highlighter
+ (which tints underneath existing black text without covering it up)—paired with a curated color palette.
+Smooth Line Rendering:
+ Raw hand movements are automatically smoothed out so freehand writing and sketching look clean rather than jagged, while streaming live to teammates as the line is being drawn.
+B. Eraser Tool
+Strict Drawing-Only Rule:
+ The eraser 
+only
+ removes freehand lines created with the Draw tool. Passing the eraser over sticky notes, shapes, uploaded photos, or text boxes does nothing to them.
+Clear Board Gesture:
+ Pressing and holding down on the Eraser icon (for just over half a second) opens a 
+Clear Board
+ button. Tapping it wipes all drawings and objects off the current frame at once.
+C. Select Tool
+Quick Move (Single Tap/Click):
+ Tapping or clicking any sticky note, shape, image, or text box selects it and displays a surrounding frame with corner resize handles and a rotation handle. Users can immediately drag it anywhere on the board without making stray pen marks.
+Outlining Drawings (Lasso / Box Selection):
+ Dragging across empty space creates a selection area. When released, any freehand pen strokes inside or touching that area are grouped together into a single movable box, allowing users to drag their entire sketch to a new spot or pinch/drag the corners to resize it.
+Item Menu &amp; Deletion:
+ Selecting any object reveals a quick menu with options to 
+Duplicate
+, 
+Bring to Front
+, 
+Send to Back
+, or 
+Delete
+ (users can also press the Delete/Backspace key on a keyboard).
+D. Sticky Notes
+Creation &amp; Customization:
+ Tapping the Sticky Note tool opens a quick note editor where users choose a background color and type their message or discussion prompt.
+Automatic Text Sizing:
+ As a user types more words into a sticky note, the text size automatically shrinks so the message always fits neatly inside the square without getting cut off.
+Live Typing Visibility:
+ Teammates see the text updating on the board as someone types, making group brainstorming feel immediate and interactive.
+E. Add Image
+Three Ways to Insert:
+Device Upload:
+ Pick standard image files directly from a phone, tablet, or computer. Large photos are automatically resized so they load quickly for everyone in the room.
+Built-In Safe Image Search:
+ Search for royalty-free photos directly inside TeenBoard with strict teen-safe content filters turned on by default.
+Cloud Storage &amp; Photo Libraries:
+ Connect to personal cloud drives or photo albums to drop existing images straight onto the board.
+Manipulation:
+ Once placed on the board, images behave like any other object—teammates can drag, resize, rotate, or layer them behind sticky notes.
+F. Insert Shape
+Available Shapes:
+ Includes Circles, Squares, Rectangles, Triangles, Diamonds, Arrows, and straight Lines.
+Styling &amp; Labels:
+ Users can customize both the border color and the inside fill color (including transparent fills so a shape can frame existing notes). Double-clicking inside any shape lets users type a centered label directly inside it.
+G. Insert Text
+Borderless Text:
+ Unlike sticky notes, this tool places clean, transparent text directly onto the board background—ideal for section headers, titles, or labeling diagrams.
+Formatting Controls:
+ Selecting a text box brings up simple controls for font style, text size, color, bold/italic styling, and left/center/right alignment. Dragging the side edges wraps the text onto new lines, while dragging the corners scales the overall size.
+H. Laser Pointer
+Temporary Highlighting:
+ Dragging the laser pointer across the board creates a bright, glowing trail that fades away completely after roughly one and a half seconds. It never leaves permanent marks behind.
+Cross-Device &amp; Screen-Share Visibility:
+ The glowing trail broadcasts live to every teammate—whether they are viewing TeenBoard on a phone, tablet, laptop, or watching someone present their screen on a video call.
+I. Personal Calculator
+Private to Each User:
+ Clicking the Calculator icon opens a standard, easy-to-use calculator window floating on the screen. Unlike sticky notes, shapes, or drawings, this calculator is 
+strictly private
+—only the person who clicked the icon can see it and interact with it. Other teammates on the same board will not see the calculator pop up or block their view.
+Standard Functions:
+ Includes everyday math buttons (addition, subtraction, multiplication, division, percentages, decimals, and clear/backspace) so students or teammates can quickly run numbers during group work without leaving TeenBoard or cluttering the shared canvas.
+Flexible Window Controls:
+ The user who opened it can drag the calculator anywhere on their own screen so it does not cover what they are reading, copy the final result to paste into a sticky note or text box, and close or minimize it at any time.
+3. Undo, Redo &amp; Sharing Permissions
+Personal Undo &amp; Redo:
+ Clicking 
+Undo
+ only reverses 
+that specific user's
+ last action. If Teammate A clicks Undo, it will never accidentally erase something Teammate B just added.
+Sharing Roles:
+ Board creators can share a link with three permission levels:
+Editor:
+ Full access to all drawing, sticky note, image, and selection tools.
+ZinObelisk.pdf
+1. 
+Description
+:
+The Zin Obelisk
+ is a classic, high-impact information-sharing and collaborative problem-solving simulation set in the ancient city of Atlantis. Rather than testing individual intelligence, it is designed as a diagnostic mirror for how a group communicates under constraints, filters out noise, and organizes itself without top-down authority. 
+Time this exercise takes
+:
+Max 25 min the timer needs to be set on 25 minutes if the team doesn’t finish they see the TeenBoard but they can’t edit it anymore.
+4. Answer:
+When they team are ready they can click answer and then if all of the team members assigned to the task will approved to answer then they can write one answer and a collective tweak so there is a space where everyone can write an answer if what they write is Neptiminus or neptiminus then they are correct and the app says to all of them congrats 
+Rationale
+1. The dimensions of the zin indicate that it contains 50,000 cubic
+feet of stone blocks.
+2. The blocks are 1 cubic foot each, therefore, 50,000 blocks are
+required.
+3. Each worker works 7 schlibs in a day (2 schlibs are devoted to
+rest).
+4. Each worker lays 150 blocks per schlib, therefore each worker lays
+1050 blocks per day.
+5. There are 8 workers per day, therefore 8,400 blocks are laid per
+working day.
+6. The 50,000th block, therefore, is laid on the sixth working day.
+7. Since work does not take place on Daydoldrum, the sixth working
+day is Neptiminus.
+5. 
+Instruction 
+In the ancient city of Atlantis, a solid, rectangular obelisk, called a zin,
+was built in honor of the goddess Tina. The structure took less than
+two weeks to complete.
+The task of your team is to determine on which day of the
+week the obelisk was completed. You have twenty-five minutes for
+this task. Do not choose a formal leader.
+You will be given cards containing information related to the
+task. You may share this information orally, but you may not show
+your cards to other participants.
+6.
+Evaluation / Review
+After the team submits the answer they get the feedback if it was correct if not why not then they see Review and it is structured like at the beginning you get 1st question you talk about it you can skip question or say completed and get another one that can take up to 30 minutes
+1. What behavior helped the group accomplish the task?
+2. What behavior hindered the group in completing the task?
+3. How did leadership emerge in the team?
+4. Who participated most?
+5. Who participated least?
+6. What feelings did you experience as the task progressed?
+7. What suggestions would you make to improve team performance?
+Cards
+:
+ZIN OBELISK INFORMATION CARDS
+1. The basic measurement of time in Atlantis is a day.
+2. An Atlantian day is divided into schlibs and ponks.
+3. The length of the zin is 50 feet.
+4. The height of the zin is 100 feet.
+5. The width of the zin is 10 feet
+6. The zin is built of stone blocks.
+7. Each block is 1 cubic foot.
+8. Day 1 in the Atlantian week is called Aguaday.
+9. Day 2 in the Atlantian week is called Neptiminus.
+10. Day 3 in the Atlantian week is called Sharkday.
+11. Day 4 in the Atlantian week is called Merma idday.
+12. Day 5 in the Atlantian week is called Daydoldrum.
+13. There are five days in an Atlantian five days in an Atlantian week.
+14. The working day has 9 schlibs.
+15. Each worker takes rest periods during the working day totaling 16
+ponks.
+16. There are 8 ponks in a schlib.
+17. Workers each lay 150 blocks per schlib.
+18. At any time when work is taking place there is a gang of 9 people
+on site.
+19. One member of each gang has religious duties and does not lay
+blocks.
+20. No works takes place on Daydoldrum.
+21. What is a cubitt?
+22. A cubitt is a cube, all sides of which measure 1 megalithic yard.
+23. There are 3 1⁄2 feet in a megalithic yard.
+24. Does work take place on Sunday?
+25. What is a zin?
+26. Which way up does the zin stand?
+27. The zin is made up of green blocks.
+28. Green has special religious significance on Mermaidday.
+29. Each gang includes two women.
+30. Work starts at daybreak on Aquaday.
+31. Only one gang is working on the construction of the zin.
+32. There are eight gold scales in a gold fin.
+33. Each block costs 2 gold fins.
+nasa-moon-survival.pdf
+ @
+TeenBond
+ to aplikacja służąca do budowania relacji w zespołach młodzieżowych.
+1. Ekran startowy, rejestracja i zarządzanie organizacją
+Wygląd i personalizacja:
+ Na dashboardzie widoczne jest logo 
+Leader Future
+ oraz kameleon, którego kolory można zmieniać (m.in. jasnozielony, pomarańczowy, różowy, niebieski).
+Dostęp i wersja demonstracyjna:
+ Aplikacja oferuje logowanie, rejestrację oraz tryb 
+Demo
+ na dole ekranu, który pozwala przetestować działanie i wygląd systemu bez zakładania konta tam są mockowe dane które pokazują już jakiś progres 
+Tworzenie organizacji i dodawanie członków:
+ Założyciel organizacji automatycznie staje się jej liderem. Może zapraszać członków poprzez link rejestracyjny lub ustawić status organizacji jako prywatny (
+Private
+ – dołączenie wymaga podania kodu) bądź publiczny (
+Public
+ – użytkownicy wybierają organizację z listy, a lider ręcznie zatwierdza ich prośby).
+2. Panel lidera i nawigacja
+Po zebraniu zespołu lider ma dostęp do trzech głównych sekcji:
+Zacznij budowanie relacji w zespole
+ (moduł ćwiczeń i gier).
+Zespół
+ (widok kafelków/prostokątów z imionami poszczególnych uczestników i ich profilami).
+Relacje międzyzespołowe
+.
+3. Przebieg procesu budowania relacji (Team Building / Team Bonding)
+Etap 1: Karty motywatorów (
+Motivators
+)
+Każdy uczestnik zapoznaje się z instrukcją i przechodzi dalej.
+Wyświetla mu się w poziomie 10 kart motywatorów. Po kliknięciu w daną kartę pojawia się jej definicja.
+Zadaniem użytkownika jest ułożenie kart blokowo w kolejności od czynnika motywującego go najbardziej do najmniej, a następnie zatwierdzenie wyboru.
+Po zatwierdzeniu przez wszystkich członków zespołu lider widzi na swoim profilu dokładną kolejność motywatorów każdego uczestnika.
+Etap 2: Scenariusze decyzyjne (
+Lost at Sea
+ lub 
+NASA Moon Survival
+)
+Lider wybiera jeden z dwóch podobnych skryptów zadaniowych (
+Lost at Sea
+ lub 
+NASA Moon Survival
+).
+Faza indywidualna:
+ Uczestnicy czytają instrukcję, a następnie w ograniczonym czasie (odliczanym przez minutnik) szeregują w pionie 15 przedmiotów od najbardziej potrzebnego (1) do najmniej przydatnego (15) – poprzez wpisanie numeru lub przeciąganie bloków. Każdy zatwierdza swój wybór.
+Faza zespołowa:
+ Po zatwierdzeniu przez wszystkich pojawia się nowa instrukcja. Zespół podczas rozmowy wspólnie ustala jedną listę na tym samym widoku – każdy ma dostęp do edycji i przesuwania elementów. Przejście dalej wymaga zatwierdzenia przez wszystkich uczestników.
+Podsumowanie i punktacja:
+ System automatycznie porównuje wynik indywidualny z zespołowym dla każdego uczestnika, wyjaśniając ewentualne różnice (dlaczego poszło lepiej samemu lub w grupie). Uczestnicy otrzymują punkty adekwatne do zdobytego wyniku.
+Gdy wybierze 
+„Lost at Sea” (Zagubieni na morzu) 
+Etap 3: Ewaluacja i drzewko relacji
+Ocena przez lidera:
+ Lider ocenia każdego członka zespołu w skali 1–5 pod kątem m.in. jakości współpracy, umiejętności słuchania czy przejmowania inicjatywy.
+Ocena przez uczestników:
+ Członkowie zespołu odpowiadają na pytania zamknięte (bez wpisywania tekstu) – wskazują osobę, z którą współpracowało im się najlepiej, wskazują kto był np. chaotyczny oraz oceniają lidera w skali 1–5 (np. czy dawał dojść do głosu).
+Generowanie drzewka relacji:
+ Na podstawie zebranych odpowiedzi system (bez użycia AI, za pomocą własnych algorytmów) generuje drzewko relacyjne widoczne tylko dla lidera. Łączy ono członków zespołu liniami o różnej grubości/sile w zależności od powiązań. Po najechaniu na konkretnego uczestnika lider widzi podsumowanie, z czego wynikają dane relacje.
+Etap 4: Gra zespołowa 
+Obelisk Zine
+Rozgrywka:
+ Po uruchomieniu gry przez lidera, pula kart zostaje podzielona między wszystkich uczestników. Gracze nie widzą nawzajem swoich kart (mają podgląd tylko własnych z boku ekranu), ale wszyscy mają jednoczesny dostęp do wspólnej tablicy 
+TeenBoard
+, na której mogą razem pisać, rysować, malować i dodawać elementy, aby wspólnie rozwiązać zagadkę.
+Zatwierdzenie i punktacja:
+ Gdy zespół ustali rozwiązanie, wszyscy wpisują je w dedykowane pole i zatwierdzają. Za odgadnięcie zagadki przyznawane są punkty.
+Aktualizacja relacji:
+ Po grze następuje ponowna ewaluacja (identyczna jak w Etapie 3), a drzewko relacji u lidera aktualizuje się o nowe wyniki.
+Etap 5: Finałowe gry dedukcyjne (
+The Murder Mystery
+)
+Wybór i mechanika gry:
+ Na zakończenie głównej ścieżki lider wybiera jedną z trzech gier typu 
+The Murder Mystery
+. Rozgrywka opiera się na analogicznej mechanice co wcześniejszy etap: uczestnicy widzą z boku ekranu swoje własne karty i wspólnie w czasie rzeczywistym edytują interaktywną tablicę 
+TeenBoard
+, aby dojść do rozwiązania.
+Zatwierdzenie i ewaluacja:
+ Po wspólnym odgadnięciu i zatwierdzeniu hasła lub odpowiedzi przez zespół następuje kolejna runda wzajemnej ewaluacji (zarówno lider ocenia zespół, jak i uczestnicy oceniają lidera oraz siebie nawzajem), co przekłada się na dalszą aktualizację drzewka relacji.
+Etap 6: Dodatkowe aktywności integracyjne (tryb swobodnego wyboru)
+Po ukończeniu wszystkich powyższych etapów lider zyskuje dostęp do puli dodatkowych aktywności, w skład której wchodzą:
+Niewykorzystane wcześniej scenariusze:
+ Drugi z niezagranych dotąd scenariuszy decyzyjnych (
+NASA Moon Survival
+ lub 
+Lost Desert
+ / 
+Lost at Sea
+) oraz pozostałe dwie gry z serii 
+The Murder Mystery
+.
+Gra w kalambury (typu 
+Skribbl.io
+):
+ Dodatkowa gra integracyjna polegająca na wyborze hasła i wspólnym rysowaniu oraz odgadywaniu.

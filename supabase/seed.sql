@@ -1,0 +1,3 @@
+-- Seed file for local development & testing
+-- Note: Standalone Demo Mode operates entirely in memory via src/lib/demo-store.ts
+-- without requiring database rows.

@@ -1,0 +1,440 @@
+
+
+Poniżej masz gotowy, 
+w 100% spójny dokument główny (PRD.md – Product Requirements Document)
+, który możesz przekazać bezpośrednio do 
+Antigravity
+ razem ze swoimi folderami obrazków i plików PDF z grami.
+Dokument ten:
+Usuwa wszystkie sprzeczności ze starych wersji.
+Ujednolica zasadę: 
+Lider (Założyciel) zawsze gra jako pełnoprawny uczestnik
+, a jednocześnie zachowuje uprawnienia administracyjne i wyłączny podgląd na Drzewko Relacji.
+Odwołuje się bezpośrednio do zasobów (obrazków kart i plików PDF), które wgrasz do Antigravity, tak aby agent wiedział, jak je podpiąć, nie gubiąc się w detalach.
+Zawiera kompletny model 
+10 Kart Motywatorów (CHAMPFROGS)
+ oraz 
+dokładny algorytm matematyczny (bez AI) dla Drzewka Relacji
+.
+PRD: Aplikacja Webowa 
+TeenBond
+ (by 
+Liderzy Jutra
+)
+1. Wizja projektu i Stack Technologiczny
+Cel aplikacji:
+ Platforma webowa do budowania relacji, komunikacji i zaufania w zespołach młodzieżowych pracujących zdalnie lub hybrydowo.
+Stack technologiczny:
+Frontend:
+ React / Next.js + Tailwind CSS (responsywny: desktop, tablet, smartfon).
+Backend &amp; Baza danych &amp; Auth &amp; Realtime:
+ 
+Supabase
+ (PostgreSQL, Supabase Auth, Supabase Realtime dla synchronizacji stanów gier, kursorów i tablicy 
+TeenBoard
+).
+Hosting / Deployment:
+ GitHub + 
+Railway
+.
+Identyfikacja wizualna (Branding):
+Logo: 
+Liderzy Jutra
+ (z motywem kameleona)[cite: 5, 27].
+Personalizacja profilu: Każdy użytkownik po rejestracji wybiera kolor swojego awatara/kameleona (np. jasnozielony, pomarańczowy, różowy, niebieski). Ten kolor identyfikuje go na tablicy 
+TeenBoard
+ oraz w Drzewku Relacji.
+Język aplikacji: Polski (z zachowaniem oryginalnych grafik kart motywatorów lub możliwością przełączenia PL/EN).
+2. Role w systemie i Onboarding
+2.1. Ekran startowy (Landing Page) i Tryb Demo
+Użytkownik widzi ekran powitalny z opcjami: 
+Zaloguj się
+, 
+Zarejestruj się
+ oraz 
+Wypróbuj Demo (bez logowania)
+.
+Tryb Demo:
+ Uruchamia interaktywny podgląd aplikacji wypełniony przykładowymi danymi (mock data) – pokazuje przykładowy zespół, ułożone karty motywatorów, fragment tablicy 
+TeenBoard
+ oraz przykładowe Drzewko Relacji, pozwalając przeklikać interfejs bez zakładania konta.
+2.2. Organizacja i Role
+W systemie istnieją dwie role, przy czym 
+obie biorą aktywny udział we wszystkich grach
+:
+Lider (Założyciel organizacji):
+Tworzy organizację i ustawia jej widoczność:
+Publiczna (Public):
+ Użytkownicy wyszukują organizację na liście i wysyłają prośbę o dołączenie, którą Lider ręcznie akceptuje lub odrzuca.
+Prywatna (Private):
+ Dołączenie wymaga wpisania unikalnego kodu zaproszenia lub wejścia przez dedykowany link wygenerowany przez Lidera.
+Zarządza startem kolejnych etapów.
+Jako jedyny widzi pełne wyniki 
+Drzewka Relacji
+ oraz szczegółowe porównanie profili motywacyjnych całego zespołu.
+Gra na równi z innymi
+ w każdym etapie (ma swoje karty, głosuje, układa listy i rysuje na tablicy).
+Członek zespołu (Uczestnik):
+Dołącza do organizacji, personalizuje kolor kameleona i bierze udział we wszystkich etapach ścieżki integracyjnej.
+3. Nawigacja i Panel Lidera
+Po utworzeniu zespołu Lider widzi 3 główne zakładki w nawigacji:
+Ścieżka Budowania Relacji (Gry i Ćwiczenia):
+ Główny widok prowadzący zespół krok po kroku przez Etapy 1–6.
+Zespół:
+ Lista kafelków z członkami zespołu (w tym Liderem). Kliknięcie w osobę otwiera jej profil: wybrany kolor kameleona, kolejność Kart Motywatorów (po ukończeniu Etapu 1) oraz zdobyte punkty/odznaki.
+Relacje Międzyzespołowe:
+ Moduł widoczny na liście zakładek (w wersji MVP służy do uruchamiania gier między dwiema podgrupami – np. scenariusz 
+Dracula
+ – oraz podglądu statystyk współpracy między grupami).
+4. Wspólny Komponent: Interaktywna Tablica 
+TeenBoard
+Tablica 
+TeenBoard
+ jest osadzona wewnątrz ekranów gier w Etapach 4, 5 oraz 6.
+Rekomendacja techniczna dla Antigravity:
+ Zamiast pisać silnik graficzny od zera, należy zintegrować bibliotekę open-source (np. 
+Tldraw
+ lub 
+Excalidraw
+) połączoną z 
+Supabase Realtime
+, dostosowując pasek narzędzi do poniższej specyfikacji:
+Struktura stron (Frames):
+ Możliwość dodawania, duplikowania i przełączania slajdów/ramek oraz zmiany tła (gładkie białe, linie, kropki, kratka).
+Niezależność od rozdzielczości:
+ Wspólny układ współrzędnych dla telefonów, tabletów i komputerów.
+Obecność na żywo (Live Presence):
+ Awatary aktywnych osób na górnym pasku oraz kolorowe kursory z imionami przesuwające się w czasie rzeczywistym.
+Blokada obiektu podczas przesuwania:
+ Gdy gracz złapie obiekt, zostaje on tymczasowo zablokowany dla innych (ramka w kolorze gracza) do momentu puszczenia.
+Zestaw narzędzi:
+Rysowanie (Draw):
+ Pióro, marker, półprzezroczysty zakreślacz + paleta kolorów, wygładzanie linii, obsługa rysika/dotyku.
+Gumka (Eraser):
+ Usuwa 
+wyłącznie
+ odręczne linie (nie usuwa karteczek, kształtów ani zdjęć). Przytrzymanie ikony &gt;0.5s otwiera przycisk 
+Wyczyść tablicę
+ (z potwierdzeniem).
+Zaznaczanie (Select):
+ Pojedyncze kliknięcie (przesuwanie, skalowanie, obrót, duplikowanie, kolejność warstw, usuwanie) oraz zaznaczenie grupowe (lasso/ramka).
+Karteczki samoprzylepne (Sticky Notes):
+ Wybór koloru, automatyczne skalowanie rozmiaru czcionki do ilości tekstu, podgląd pisania na żywo.
+Dodawanie zdjęć (Add Image):
+ Upload z urządzenia (z automatyczną kompresją).
+Kształty (Shapes):
+ Koło, kwadrat, prostokąt, trójkąt, romb, strzałka, linia; możliwość wpisania tekstu wewnątrz kształtu.
+Tekst (Text):
+ Bezramkowy tekst na tablicy z wyborem rozmiaru, koloru, pogrubienia i wyrównania.
+Wskaźnik laserowy (Laser Pointer):
+ Świecący ślad widoczny dla wszystkich, znikający automatycznie po ~1,5 sekundy.
+Prywatny kalkulator (Personal Calculator):
+ Otwierane pływające okienko widoczne 
+tylko dla użytkownika, który je otworzył
+ (nie zasłania widoku innym graczom).
+Cofnij / Ponów (Personal Undo/Redo):
+ Przycisk 
+Cofnij
+ cofa wyłącznie ostatnią akcję danego użytkownika, nie naruszając zmian innych graczy.
+5. Przebieg Procesu Budowania Relacji (Etapy 1–6)
+ETAP 1: Karty Motywatorów (CHAMPFROGS)
+Zasoby graficzne (dostarczone w folderze projektu):
+ 10 par plików graficznych ([Nazwa] Front.jpg oraz [Nazwa] Back.jpg).
+Uwaga implementacyjna:
+ Należy wykadrować obrazy z szarego tła mockupu lub wyświetlać je jako karty z efektem obrotu 3D (
+flip card
+) po kliknięciu[cite: 5, 26, 27].
+Lista 10 Kart (Awers -&gt; Rewers z definicją):
+ORDER (Porządek):
+ 
+„There are enough rules and policies for a stable environment.”
+ (Jest wystarczająco dużo zasad, by zapewnić stabilne środowisko).
+POWER (Wpływ / Władza):
+ 
+„There’s enough room for me to influence what happens around me.”
+ (Mam przestrzeń, by wpływać na to, co dzieje się wokół mnie).
+RELATEDNESS (Relacje):
+ 
+„I have good social contacts with the people in my work.”
+ (Mam dobre relacje społeczne z ludźmi, z którymi współpracuję).
+STATUS (Status):
+ 
+„My position is good, and recognized by the people who work with me.”
+ (Moja pozycja jest dobra i doceniana przez współpracowników).
+CURIOSITY (Ciekawość):
+ 
+„I have plenty of things to investigate and to think about.”
+ (Mam wiele rzeczy do odkrywania i przemyślenia).
+HONOR (Honor / Wartości):
+ 
+„I feel proud that my personal values are reflected in how we work.”
+ (Czuję dumę, że moje wartości są odzwierciedlone w sposobie naszej pracy).
+ACCEPTANCE (Akceptacja):
+ 
+„The people around me approve of what I do and who I am.”
+ (Ludzie wokół mnie akceptują to, co robię i kim jestem).
+MASTERY (Mistrzostwo):
+ 
+„My work challenges my competence but it is still within my abilities.”
+ (Moje zadania rozwijają moje umiejętności, pozostając w moim zasięgu).
+FREEDOM (Wolność / Autonomia):
+ 
+„I am independent of others with my work and my responsibilities.”
+ (Jestem niezależny w swojej pracy i obowiązkach).
+GOAL (Cel):
+ 
+„My purpose in life is reflected in the work that I do.”
+ (Mój cel i sens działania są odzwierciedlone w tym, co robię).
+Mechanika Etapu 1:
+Każdy gracz (w tym Lider) widzi wszystkie 10 kart na ekranie. Kliknięcie karty obraca ją na rewers i pokazuje definicję[cite: 5, 27].
+Gracz układa metodą 
+Drag &amp; Drop
+ wszystkie 10 kart w kolejności od 
+1 (Najbardziej mnie motywuje)
+ do 
+10 (Najmniej mnie motywuje)
+ i klika 
+Zatwierdź
+.
+Gdy 100% zespołu zatwierdzi swój wybór, Lider może podejrzeć w zakładce 
+Zespół
+ dokładną kolejność motywatorów każdego członka (w tym swoją).
+ETAP 2: Scenariusze Decyzyjne (
+Lost at Sea
+ lub 
+NASA Moon Survival
+)
+Zasoby (w załączonych plikach PDF):
+ lost-at-sea-instructions-8-19-2015.pdf oraz nasa-moon-survival.pdf.
+Wybór scenariusza:
+ Lider wybiera jedną z dwóch gier (druga trafia do Etapu 6 jako aktywność dodatkowa).
+Mechanika (identyczna dla obu gier, różni się tylko treścią 15 przedmiotów i kluczem ekspertów):
+Intro:
+ Krótkie wprowadzenie fabularne z maskotką kameleona.
+Faza 1 – Indywidualna (minutnik: 5–10 min):
+ Każdy uczestnik (w tym Lider) samodzielnie szereguje 15 przedmiotów od 
+1 (Najważniejszy)
+ do 
+15 (Najmniej przydatny)
+ za pomocą 
+Drag &amp; Drop
+ lub wpisania cyfry. Po kliknięciu 
+Zatwierdź
+ trafia do poczekalni.
+Faza 2 – Zespołowa (minutnik: 15–20 min):
+ Wszyscy widzą jedną wspólną listę edytowaną w czasie rzeczywistym. Z boku ekranu gracz ma podgląd swojej listy z Fazy 1 (system podświetla na pomarańczowo elementy, które na liście zespołu różnią się o &gt;5 pozycji od typu gracza, aby stymulować dyskusję). Przejście dalej wymaga kliknięcia 
+Akceptuję listę zespołu
+ przez 100% graczy.
+Podsumowanie i punktacja:
+ System liczy sumę różnic bezwzględnych między typem gracza/zespołu a rankingiem ekspertów (US Coast Guard lub NASA). Wyświetla:
+Wynik indywidualny vs wynik zespołowy (wykrywając tzw. 
+Efekt Synergii
+, gdy zespół wypadł lepiej niż średnia indywidualna, oraz 
+Cichego Eksperta
+, gdy pojedyncza osoba miała wynik lepszy niż cały zespół).
+Uzasadnienie ekspertów dla każdego z 15 przedmiotów.
+ETAP 3: Ewaluacja i Algorytm Drzewka Relacji (Wykonywany po Etapie 2, 4 i 5)
+Po każdej grze zespołowej uruchamia się krótka ankieta (czas ok. 2 minuty), która zasila 
+Drzewko Relacji
+ widoczne wyłącznie dla Lidera.
+3.1. Formularz oceny (brak pól tekstowych – tylko kliknięcia)
+Każdy członek zespołu (w tym Lider) ocenia współgraczy:
+ Wybiera po jednej osobie z listy (klikając w kafelek z imieniem; nie można wybrać siebie) w 4 pytaniach zamkniętych:
+„Z kim współpracowało Ci się w tej grze najlepiej?”
+ (
++3 pkt relacji
+ w parze)
+„Kto najlepiej słuchał innych i pomagał dojść do głosu?”
+ (
++2 pkt relacji
+ w parze)
+„Kto najlepiej porządkował nasze pomysły i pilnował celu?”
+ (
++2 pkt relacji
+ w parze)
+„Kto wprowadzał najwięcej chaosu lub przerywał innym?”
+ (
+-1 pkt relacji
+ w parze + flaga ostrzegawcza dla Lidera)
+Ocena Lidera przez pozostałych członków zespołu:
+ Uczestnicy (bez Lidera) oceniają w skali 
+1–5
+ dwa stwierdzenia dotyczące Lidera:
+„Lider dawał wszystkim przestrzeń do wypowiedzi i słuchał naszych argumentów.”
+ (1–5)
+„Lider pomagał utrzymać dobrą atmosferę w zespole.”
+ (1–5)
+Ocena zespołu przez Lidera:
+ Lider ocenia każdego z pozostałych członków zespołu w skali 
+1–5
+ pod kątem:
+Zaangażowanie i aktywność w zadaniu
+ (1–5)
+Otwartość na współpracę i wsparcie innych
+ (1–5)
+3.2. Algorytm generowania Drzewka Relacji (bez użycia AI)
+Wizualizacja (Graf sieciowy / D3.js lub React Flow):
+Każdy uczestnik (w tym Lider) to węzeł (kółko z awatarem w wybranym kolorze kameleona).
+Między każdą parą osób 
+(A,B)
+ system sumuje punkty wzajemnych wskazań ze wszystkich ukończonych dotychczas etapów: 
+W(A,B)=punktyodAdlaB+punktyodBdlaA
+.
+Grubość i styl linii łączącej:
+W
+≤
+0
+: Brak linii (lub cienka przerywana szara linia w przypadku wskazania chaosu).
+W
+∈
+[1,3]
+: Cienka linia (1px) – 
+Słaba / początkująca relacja
+.
+W
+∈
+[4,7]
+: Średnia linia (3px) – 
+Dobra współpraca
+.
+W
+≥
+8
+: Gruba linia (6px, podświetlona) – 
+Silna synergia i zaufanie
+.
+Automatyczne podsumowanie po najechaniu na węzeł (Tooltip Lidera):
+System generuje 2–3 zdania na podstawie twardych reguł warunkowych (if/else), np.:
+Jeśli osoba otrzymała najwięcej głosów w pytaniu 2: 
+„[Imię] pełni w zespole rolę spoiwa – inni doceniają jego/jej umiejętność słuchania.”
+Jeśli osoba miała wysoki wynik indywidualny w Etapie 2, ale mało wskazań od grupy: 
+„[Imię] ma świetną intuicję analityczną, ale rzadko przebija się w dyskusji – warto oddawać mu/jej głos.”
+Jeśli osoba otrzymała &gt;=2 wskazania w pytaniu 4: 
+„Wskazania sugerują tarcia komunikacyjne podczas pracy pod presją czasu.”
+ETAP 4: Gra Zespołowa 
+The Zin Obelisk
+Zasoby (w załączonym pliku PDF):
+ ZinObelisk.pdf (zawiera fabułę, 33 karty informacyjne i klucz rozwiązania).
+Adaptacja pod TeenBond (Lider gra razem z zespołem):
+Timer:
+ Odliczanie 
+25 minut
+[cite: 1, 33]. Po upływie czasu tablica 
+TeenBoard
+ przechodzi w tryb tylko do odczytu (
+read-only
+).
+Rozdanie kart:
+ System tasuje 
+33 karty informacyjne
+ z PDF-a i rozdziela je po równo między wszystkich graczy (w tym Lidera)[cite: 5, 33, 34]. Każdy widzi 
+tylko swoje karty
+ w bocznym panelu ekranu (zablokowane kopiowanie tekstu, aby wymusić rozmowę i notowanie na tablicy).
+Współpraca na TeenBoard:
+ Na środku ekranu wszyscy widzą wspólną tablicę 
+TeenBoard
+ (z dostępnym prywatnym kalkulatorem w rogu).
+Zatwierdzenie odpowiedzi:
+ Na dole ekranu znajduje się wspólny panel odpowiedzi. Aby wysłać odpowiedź, wszyscy członkowie zespołu muszą kliknąć 
+Gotowi do odpowiedzi
+, a następnie wpisać nazwę dnia tygodnia.
+Weryfikacja i Ekran Wyjaśnienia:
+ System akceptuje odpowiedź Neptiminus lub Neptominus (niezależnie od wielkości liter). Następnie wyświetla pełne obliczenia krok po kroku (50 000 bloków / 8 400 bloków dziennie = 6. dzień roboczy)[cite: 1, 5, 35] oraz uruchamia 
+Etap Ewaluacji (aktualizacja Drzewka Relacji)
+.
+ETAP 5: Finałowe Gry Dedukcyjne (
+The Murder Mystery
+)
+Zasoby (w załączonych plikach PDF):
+movie_murder_mystery_party_game.pdf (Scenariusz 1: 
+Tajemnica na planie filmowym
+)
+Murder_mystery_-_Katrine_Storgaard_Callesen.pdf (Scenariusz 2: 
+Zabójstwo w rezydencji TechStream
+)
+DraculahasRisenfromGravecommunicationgame-1.pdf (Scenariusz 3: 
+Przebudzenie Drakuli
+ – wariant negocjacyjny dla większych zespołów lub rozgrywek międzyzespołowych)[cite: 1, 3, 9]
+Wybór gry:
+ Lider wybiera jeden z trzech scenariuszy (pozostałe dwa trafiają do Etapu 6).
+Mechanika wspólna dla Scenariuszy 1 i 2 (Tryb kooperacyjnej dedukcji):
+Role i karty:
+ System rozdziela karty postaci oraz karty poszlak między wszystkich graczy (w tym Lidera – brak zewnętrznego moderatora). Każdy widzi w panelu bocznym zakładki 
+Moja Postać
+ (cechy, motyw, sekretne zadanie behawioralne) oraz 
+Moje Poszlaki
+.
+Tablica TeenBoard z gotowym szablonem:
+ Tablica otwiera się z wgraną w tle siatką śledczą (lista podejrzanych + miejsce na oś czasu / mapę lokacji).
+Finałowy werdykt:
+ Zespół wspólnie wybiera z listy rozwijanej 
+Mordercę
+ oraz 
+Sposób/Narzędzie zbrodni
+. Po zatwierdzeniu przez 100% graczy system pokazuje rozwiązanie fabularne, przyznaje punkty i uruchamia końcową rundę ewaluacji.
+Mechanika dla Scenariusza 3 (
+Dracula
+ – Tryb 2 podgrup):
+System dzieli graczy (w tym Lidera) na 
+Zespół A (Czerwone Nietoperze)
+ i 
+Zespół B (Czarne Koty)
+[cite: 3, 13, 14].
+Każda podgrupa ma osobną tablicę 
+TeenBoard
+, swoje unikalne karty faktów (
+Fact Sheet #1
+ vs 
+Fact Sheet #2
+) oraz wybiera jednego 
+Negocjatora
+[cite: 3, 10, 15, 18].
+Tylko dwaj Negocjatorzy mają dostęp do prywatnego czatu tekstowego 1-na-1 (
+Strefa Negocjacji
+)[cite: 3, 10].
+System akceptuje dwa poprawne rozwiązania: 
+Niedziela, 9:00
+ (wariant rywalizacyjny – 100 pkt) oraz 
+Sobota, 9:00
+ (wariant pełnej współpracy obu grup – 200 pkt + odznaka 
+Mistrzowie Synergii
+)[cite: 3, 13, 14].
+ETAP 6: Tryb Swobodny (Odblokowany po ukończeniu Etapu 5)
+Po przejściu głównej ścieżki Lider może dowolnie uruchamiać:
+Niewykorzystane wcześniej scenariusze
+ z Etapu 2 i Etapu 5.
+Kalambury (w stylu 
+Skribbl.io
+) na tablicy TeenBoard:
+Gracze (w tym Lider) rysują po kolei wylosowane przez system hasło (z puli młodzieżowej / team-buildingowej) w czasie 60 sekund na tablicy 
+TeenBoard
+ (zablokowane narzędzie tekstu, aktywne tylko rysowanie i kształty).
+Pozostali wpisują swoje typy w polu czatu zgadywania – im szybsze odgadnięcie, tym więcej punktów dla zgadującego i rysującego.
+6. Kolejność Wdrażania dla Antigravity (Milestones)
+Aby uniknąć błędów przy generowaniu kodu, wdrażaj aplikację w 4 krokach:
+Milestone 1 (Core &amp; Etap 1):
+ Konfiguracja Next.js + Supabase + Railway, logowanie, tworzenie organizacji (Public/Private), wybór koloru kameleona, Tryb Demo oraz pełny Etap 1 (10 Kart Motywatorów z grafikami i podglądem profili w zakładce 
+Zespół
+).
+Milestone 2 (Etap 2 &amp; Etap 3):
+ Implementacja gier 
+Lost at Sea
+ i 
+NASA Moon Survival
+ (faza indywidualna + zespołowa w czasie rzeczywistym + tabela wyników) oraz budowa systemu ankiet ewaluacyjnych i grafu 
+Drzewka Relacji
+.
+Milestone 3 (TeenBoard &amp; Etap 4):
+ Integracja tablicy 
+TeenBoard
+ (Tldraw/Excalidraw + Supabase Realtime + prywatny kalkulator) oraz wdrożenie gry 
+The Zin Obelisk
+ (33 karty + timer + weryfikacja odpowiedzi)[cite: 1, 5, 33, 34].
+Milestone 4 (Etap 5 &amp; Etap 6):
+ Wdrożenie 3 scenariuszy 
+Murder Mystery
+ (w tym podziału na 2 pokoje w 
+Draculi
+) oraz trybu 
+Kalambury
+.
