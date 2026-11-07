@@ -53,7 +53,11 @@ export function getDataClient(): DataClient {
       },
       submitMotivatorRanking: async (userId: string, ranking: string[]) => {
         demoStore.updateMotivatorRanking(userId, ranking);
-        return { allCompleted: true };
+        const latestState = useDemoStore.getState();
+        const allCompleted = latestState.members.every(
+          (m) => Array.isArray(latestState.motivators[m.id]) && latestState.motivators[m.id].length === 10
+        );
+        return { allCompleted };
       },
       getDecisionData: async () => {
         return demoStore.decisionData;
@@ -252,12 +256,15 @@ export function getDataClient(): DataClient {
         .single()) as { data: any };
 
       if (membership?.organization_id) {
-        await (supabase.from('motivator_rankings') as any).upsert({
-          organization_id: membership.organization_id,
-          user_id: userId,
-          ranking,
-          submitted_at: new Date().toISOString(),
-        });
+        await (supabase.from('motivator_rankings') as any).upsert(
+          {
+            organization_id: membership.organization_id,
+            user_id: userId,
+            ranking,
+            submitted_at: new Date().toISOString(),
+          },
+          { onConflict: 'organization_id,user_id' }
+        );
       }
       return { allCompleted: true };
     },

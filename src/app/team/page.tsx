@@ -16,12 +16,24 @@ import {
   ShieldCheck,
   HeartHandshake,
   Lightbulb,
+  UserPlus,
+  X,
 } from 'lucide-react';
 
 export default function TeamPage() {
-  const { organization, members, motivators, activeUserId, switchActiveUser, getActiveUser } = useDemoStore();
+  const {
+    organization,
+    members,
+    motivators,
+    activeUserId,
+    switchActiveUser,
+    getActiveUser,
+    pendingJoinRequests,
+    resolveJoinRequest,
+  } = useDemoStore();
   const activeUser = getActiveUser();
   const isLeader = activeUser?.role === 'leader';
+  const pendingList = (pendingJoinRequests || []).filter((r) => r.status === 'pending');
 
   const [copiedCode, setCopiedCode] = useState(false);
 
@@ -76,6 +88,56 @@ export default function TeamPage() {
           </div>
         </div>
       </div>
+
+      {/* Pending Join Requests (Leader Approval for Public Organizations - F04) */}
+      {isLeader && pendingList.length > 0 && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-cyan-500/30 shadow-xl space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <UserPlus size={18} className="text-cyan-400" />
+              <h2 className="text-base sm:text-lg font-bold text-white">
+                Oczekujące Prośby o Dołączenie ({pendingList.length})
+              </h2>
+            </div>
+            <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 font-bold">
+              Wymagana akceptacja Lidera
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {pendingList.map((req) => (
+              <div
+                key={req.id}
+                className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3">
+                  <ChameleonAvatar color={req.chameleonColor} name={req.name} size="md" />
+                  <div>
+                    <p className="text-sm font-bold text-white">{req.name}</p>
+                    <p className="text-xs text-slate-400">{req.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => resolveJoinRequest(req.id, 'active')}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all"
+                  >
+                    <Check size={14} />
+                    <span>Akceptuj</span>
+                  </button>
+                  <button
+                    onClick={() => resolveJoinRequest(req.id, 'rejected')}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all"
+                  >
+                    <X size={14} />
+                    <span>Odrzuć</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Team Members Roster Grid */}
       <div className="space-y-4">

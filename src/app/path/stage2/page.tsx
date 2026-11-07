@@ -24,11 +24,14 @@ import {
 function Stage2Content() {
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view');
+  const scenarioParam = searchParams.get('scenario');
+  const initialScenario: 'lost_at_sea' | 'moon' =
+    scenarioParam === 'moon' ? 'moon' : 'lost_at_sea';
 
   const { activeUserId, members } = useDemoStore();
 
   // Active scenario: 'lost_at_sea' | 'moon'
-  const [selectedScenarioId, setSelectedScenarioId] = useState<'lost_at_sea' | 'moon'>('lost_at_sea');
+  const [selectedScenarioId, setSelectedScenarioId] = useState<'lost_at_sea' | 'moon'>(initialScenario);
 
   // Step state: 'selection' | 'solo' | 'team' | 'summary'
   const [currentStep, setCurrentStep] = useState<'selection' | 'solo' | 'team' | 'summary'>(
@@ -37,12 +40,12 @@ function Stage2Content() {
 
   // User solo ranking
   const [userSoloRanking, setUserSoloRanking] = useState<string[]>(() => {
-    return getScenario('lost_at_sea').items.map((i) => i.id);
+    return getScenario(initialScenario).items.map((i) => i.id);
   });
 
   // Team rankings
   const [teamRanking, setTeamRanking] = useState<string[]>(() => {
-    return getDefaultTeamRanking('lost_at_sea');
+    return getDefaultTeamRanking(initialScenario);
   });
 
   // Solo submissions dictionary for team members (for controversy & leaderboard)

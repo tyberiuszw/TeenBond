@@ -15,11 +15,28 @@ import {
   Users,
   CheckCircle2,
   Building,
+  Search,
 } from 'lucide-react';
+import { isSupabaseConfigured, createClient } from '@/lib/supabase/client';
+
+const PUBLIC_ORGS_DIRECTORY = [
+  {
+    id: 'org-demo-alfa',
+    name: 'Zespół Alfa — Liderzy Jutra',
+    membersCount: 5,
+    description: 'Zespół flagowy programu rozwojowego Liderzy Jutra.',
+  },
+  {
+    id: 'org-pub-innowacje',
+    name: 'Koło Młodych Innowatorów',
+    membersCount: 4,
+    description: 'Grupa projektowa pracująca nad inicjatywami społecznymi.',
+  },
+];
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { enableDemoMode } = useDemoStore();
+  const { enableDemoMode, requestJoinPublicOrg } = useDemoStore();
   const { session, setSession, setActiveOrg } = useSessionStore();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -32,16 +49,56 @@ export default function OnboardingPage() {
   const [newOrgType, setNewOrgType] = useState<'private' | 'public'>('private');
   const [inviteCodeInput, setInviteCodeInput] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [publicSearchQuery, setPublicSearchQuery] = useState('');
+  const [requestedOrgId, setRequestedOrgId] = useState<string | null>(null);
 
   const handleNextStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     setStep(2);
   };
 
-  const handleCompleteCreateOrg = () => {
+  const handleCompleteCreateOrg = async () => {
     const generatedCode = `TB-${Math.floor(1000 + Math.random() * 9000)}`;
+    let orgId = `org-${Date.now()}`;
+    const userId = session?.id || `user-${Date.now()}`;
+    const userEmail = session?.email || 'lider@teenbond.pl';
+
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        const { data: authData } = await supabase.auth.getUser();
+        const realUserId = authData.user?.id || userId;
+        await (supabase.from('profiles') as any).upsert({
+          id: realUserId,
+          email: authData.user?.email || userEmail,
+          full_name: nickname,
+          chameleon_color: selectedColor,
+        });
+        const { data: createdOrg } = await (supabase.from('organizations') as any)
+          .insert({
+            name: newOrgName,
+            slug: `${newOrgName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`,
+            type: newOrgType,
+            is_public: newOrgType === 'public',
+            invite_code: generatedCode,
+            created_by: realUserId,
+          })
+          .select('*')
+          .single();
+        if (createdOrg?.id) {
+          orgId = createdOrg.id;
+          await (supabase.from('team_members') as any).insert({
+            organization_id: orgId,
+            user_id: realUserId,
+            role: 'leader',
+            status: 'active',
+          });
+        }
+      } catch {}
+    }
+
     const orgData = {
-      orgId: `org-${Date.now()}`,
+      orgId,
       name: newOrgName,
       isDemo: false,
       isPublic: newOrgType === 'public',
@@ -51,8 +108,8 @@ export default function OnboardingPage() {
 
     setActiveOrg(orgData);
     setSession({
-      id: session?.id || `user-${Date.now()}`,
-      email: session?.email || 'lider@teenbond.pl',
+      id: userId,
+      email: userEmail,
       name: nickname,
       chameleonColor: selectedColor,
       role: 'leader',
@@ -62,14 +119,64 @@ export default function OnboardingPage() {
     router.push('/path');
   };
 
-  const handleCompleteJoinCode = () => {
+  const handleCompleteJoinCode = async () => {
     const clean = inviteCodeInput.trim().toUpperCase();
+    if (isSupabaseConfigured() && clean.length >= 4) {
+      try {
+        const supabase = createClient();
+        const { data: authData } = await supabase.auth.getUser();
+        const { data: foundOrg } = await (supabase.from('organizations') as any)
+          .select('*')
+          .eq('invite_code', clean)
+          .single();
+        if (foundOrg?.id && authData.user) {
+          await (supabase.from('team_members') as any).upsert(
+            {
+              organization_id: foundOrg.id,
+              user_id: authData.user.id,
+              role: 'member',
+              status: 'active',
+            },
+            { onConflict: 'organization_id,user_id' }
+          );
+          router.push('/path');
+          return;
+        }
+      } catch {}
+    }
+
     if (clean === 'TB-ALFA' || clean === 'ALFA-2026' || clean.startsWith('TB-')) {
       enableDemoMode('demo-user-bartek');
       router.push('/path');
     } else {
       setCodeError('Niepoprawny kod zespołu. Użyj np. ALFA-2026 lub TB-ALFA.');
     }
+  };
+
+  const handleRequestPublicOrg = async (orgId: string) => {
+    requestJoinPublicOrg({
+      name: nickname,
+      email: session?.email || `${nickname.toLowerCase().replace(/\s+/g, '.')}@szkola.pl`,
+      chameleonColor: selectedColor,
+    });
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData.user) {
+          await (supabase.from('team_members') as any).upsert(
+            {
+              organization_id: orgId,
+              user_id: authData.user.id,
+              role: 'member',
+              status: 'pending',
+            },
+            { onConflict: 'organization_id,user_id' }
+          );
+        }
+      } catch {}
+    }
+    setRequestedOrgId(orgId);
   };
 
   return (
@@ -158,7 +265,7 @@ export default function OnboardingPage() {
             </div>
 
             {/* Mode selection cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <button
                 type="button"
                 onClick={() => setOrgMode('create')}
@@ -183,8 +290,22 @@ export default function OnboardingPage() {
                 }`}
               >
                 <KeyRound className="w-5 h-5 text-blue-400 mb-2" />
-                <h3 className="font-bold text-sm text-white">Mam Kod Zaproszenia</h3>
-                <p className="text-[11px] text-slate-400 mt-1">Dołącz do prywatnej organizacji (np. TB-ALFA)</p>
+                <h3 className="font-bold text-sm text-white">Kod Prywatny</h3>
+                <p className="text-[11px] text-slate-400 mt-1">Dołącz kodem zaproszenia (np. TB-ALFA)</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOrgMode('join_public')}
+                className={`p-4 rounded-2xl border text-left transition-all ${
+                  orgMode === 'join_public'
+                    ? 'border-cyan-500 bg-cyan-500/10 text-white ring-1 ring-cyan-500'
+                    : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <Users className="w-5 h-5 text-cyan-400 mb-2" />
+                <h3 className="font-bold text-sm text-white">Zespoły Publiczne</h3>
+                <p className="text-[11px] text-slate-400 mt-1">Wyszukaj grupę i wyślij prośbę do Lidera</p>
               </button>
 
               <button
@@ -276,6 +397,67 @@ export default function OnboardingPage() {
                 >
                   Dołącz do zespołu
                 </button>
+              </div>
+            )}
+
+            {/* Subform for Public Organizations Directory & Join Request */}
+            {orgMode === 'join_public' && (
+              <div className="space-y-4 pt-2">
+                <div className="relative">
+                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={publicSearchQuery}
+                    onChange={(e) => setPublicSearchQuery(e.target.value)}
+                    placeholder="Wyszukaj publiczną organizację po nazwie..."
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+
+                <div className="space-y-2.5">
+                  {PUBLIC_ORGS_DIRECTORY.filter((o) =>
+                    o.name.toLowerCase().includes(publicSearchQuery.toLowerCase())
+                  ).map((org) => {
+                    const isRequested = requestedOrgId === org.id;
+                    return (
+                      <div
+                        key={org.id}
+                        className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div>
+                          <h4 className="text-sm font-bold text-white">{org.name}</h4>
+                          <p className="text-xs text-slate-400">{org.description}</p>
+                        </div>
+                        {isRequested ? (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+                              <CheckCircle2 size={14} />
+                              <span>Wysłano prośbę do Lidera</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                enableDemoMode('demo-user-anna');
+                                router.push('/team');
+                              }}
+                              className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black transition-all"
+                            >
+                              Otwórz Panel Lidera
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleRequestPublicOrg(org.id)}
+                            className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black shadow-md transition-all shrink-0"
+                          >
+                            Wyślij prośbę o dołączenie
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

@@ -1,13 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { MurderMysteryContainer } from '@/components/games/murder/MurderMysteryContainer';
 import { DraculaGameContainer } from '@/components/games/dracula/DraculaGameContainer';
 import { ArrowLeft, ShieldAlert, Skull, Eye } from 'lucide-react';
+import { MurderScenarioId } from '@/types/game';
 
-export default function Stage5Page() {
-  const [selectedGame, setSelectedGame] = useState<'murder' | 'dracula'>('murder');
+function Stage5Content() {
+  const searchParams = useSearchParams();
+  const gameParam = searchParams.get('game');
+  const scenarioParam = searchParams.get('scenario');
+
+  const [selectedGame, setSelectedGame] = useState<'murder' | 'dracula'>(
+    gameParam === 'dracula' ? 'dracula' : 'murder'
+  );
+  const initialMurderScenario: MurderScenarioId =
+    scenarioParam === 'techstream' ? 'techstream' : 'movie';
 
   return (
     <div className="relative w-full h-[calc(100vh-4rem)] flex flex-col overflow-hidden bg-slate-950">
@@ -69,11 +79,19 @@ export default function Stage5Page() {
       {/* Main Game Container */}
       <div className="flex-1 w-full h-full relative overflow-hidden">
         {selectedGame === 'murder' ? (
-          <MurderMysteryContainer />
+          <MurderMysteryContainer initialScenario={initialMurderScenario} />
         ) : (
           <DraculaGameContainer />
         )}
       </div>
     </div>
+  );
+}
+
+export default function Stage5Page() {
+  return (
+    <Suspense fallback={<div className="flex-1 p-8 text-center text-slate-400 text-sm">Ładowanie gry śledczej...</div>}>
+      <Stage5Content />
+    </Suspense>
   );
 }

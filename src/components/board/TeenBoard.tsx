@@ -9,6 +9,8 @@ import { PrivateCalculator } from './PrivateCalculator';
 import { useTeenBoardStore } from '@/lib/board/teenboard-store';
 import { BoardElement, BoardBackgroundType } from '@/types/board';
 import { DEMO_TEENBOARD_ELEMENTS } from '@/lib/demo-mock-data';
+import { useDemoStore } from '@/lib/demo-store';
+import { ChameleonAvatar } from '@/components/brand/ChameleonAvatar';
 
 interface TeenBoardProps {
   currentUserId?: string;
@@ -60,15 +62,35 @@ export const TeenBoard: React.FC<TeenBoardProps> = ({
     loadElements,
     setReadOnly,
     setRoomId,
+    connectRoom,
+    disconnectRoom,
   } = useTeenBoardStore();
 
+  const { members, getActiveUser } = useDemoStore();
   const [calcState, setCalcState] = useState(() => calculatorManager.getState(currentUserId));
 
-  // Sync room & read-only state
+  // Sync room, Realtime Broadcast/Presence channel & read-only state
   useEffect(() => {
     setRoomId(roomId);
     setReadOnly(isReadOnly);
-  }, [roomId, isReadOnly, setRoomId, setReadOnly]);
+
+    const activeUser =
+      members.find((m) => m.id === currentUserId) ||
+      getActiveUser() || {
+        id: currentUserId,
+        email: '',
+        name: 'Gracz',
+        chameleonColor: '#10B981',
+        role: 'member' as const,
+        orgId: 'org-demo-alfa',
+        isDemo: true,
+      };
+
+    connectRoom(roomId, activeUser);
+    return () => {
+      disconnectRoom();
+    };
+  }, [roomId, currentUserId, isReadOnly, setRoomId, setReadOnly, connectRoom, disconnectRoom]);
 
   // Load initial elements or default demo elements
   useEffect(() => {
@@ -126,6 +148,27 @@ export const TeenBoard: React.FC<TeenBoardProps> = ({
         isReadOnly={isReadOnly}
         mode={mode}
       />
+
+      {/* Live Presence Avatars on Top Bar (PRD 4: Obecność na żywo) */}
+      <div className="hidden xl:flex items-center gap-1.5 absolute top-4 right-4 z-40 px-3 py-1.5 rounded-2xl bg-slate-900/90 backdrop-blur-md border border-slate-700/80 shadow-xl">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1" />
+        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider mr-1">
+          Na żywo ({members.length})
+        </span>
+        <div className="flex -space-x-1.5">
+          {members.map((m) => (
+            <div key={m.id} title={`${m.name} (${m.id === currentUserId ? 'Ty' : 'Online'})`}>
+              <ChameleonAvatar
+                color={m.chameleonColor}
+                name={m.name}
+                size="sm"
+                showOnlineStatus
+                isOnline
+              />
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Main Interactive SVG + Canvas Viewport */}
       <BoardCanvas

@@ -38,6 +38,16 @@ interface DemoStoreState {
   draculaSolved: boolean;
   draculaPoints: number;
 
+  // Public Organization Join Requests (F04)
+  pendingJoinRequests: Array<{
+    id: string;
+    name: string;
+    email: string;
+    chameleonColor: string;
+    requestedAt: string;
+    status: 'pending' | 'active' | 'rejected';
+  }>;
+
   // Actions
   enableDemoMode: (userId?: string) => void;
   disableDemoMode: () => void;
@@ -58,6 +68,10 @@ interface DemoStoreState {
   setZinSolved: (solved: boolean) => void;
   setMurderSolved: (scenarioId: string, solved: boolean) => void;
   setDraculaResolution: (solved: boolean, points: number) => void;
+
+  // Organization Join Request Actions (F04)
+  requestJoinPublicOrg: (applicant: { name: string; email: string; chameleonColor: string }) => void;
+  resolveJoinRequest: (requestId: string, decision: 'active' | 'rejected') => void;
 }
 
 function getSavedUserId(): string {
@@ -111,6 +125,16 @@ export const useDemoStore = create<DemoStoreState>((set, get) => ({
   murderSolved: {},
   draculaSolved: false,
   draculaPoints: 0,
+  pendingJoinRequests: [
+    {
+      id: 'req-demo-filip',
+      name: 'Filip (Kandydat)',
+      email: 'filip@liderzyjutra.pl',
+      chameleonColor: '#06B6D4',
+      requestedAt: '2026-11-07T10:00:00Z',
+      status: 'pending',
+    },
+  ],
 
   enableDemoMode: (userId = 'demo-user-anna') => {
     if (typeof document !== 'undefined') {
@@ -188,6 +212,20 @@ export const useDemoStore = create<DemoStoreState>((set, get) => ({
       activeUserId: 'demo-user-anna',
       surveySubmissions: { 2: {} },
       surveyProgress: { 2: ['demo-user-anna', 'demo-user-bartek', 'demo-user-celina', 'demo-user-dawid', 'demo-user-ewa'] },
+      zinSolved: false,
+      murderSolved: {},
+      draculaSolved: false,
+      draculaPoints: 0,
+      pendingJoinRequests: [
+        {
+          id: 'req-demo-filip',
+          name: 'Filip (Kandydat)',
+          email: 'filip@liderzyjutra.pl',
+          chameleonColor: '#06B6D4',
+          requestedAt: '2026-11-07T10:00:00Z',
+          status: 'pending',
+        },
+      ],
     });
   },
 
@@ -222,6 +260,54 @@ export const useDemoStore = create<DemoStoreState>((set, get) => ({
   setDraculaResolution: (solved: boolean, points: number) =>
     set({ draculaSolved: solved, draculaPoints: points }),
 
+  requestJoinPublicOrg: (applicant) => {
+    const newReq = {
+      id: `req-${Date.now()}`,
+      name: applicant.name,
+      email: applicant.email,
+      chameleonColor: applicant.chameleonColor,
+      requestedAt: new Date().toISOString(),
+      status: 'pending' as const,
+    };
+    set((state) => ({
+      pendingJoinRequests: [...state.pendingJoinRequests, newReq],
+    }));
+  },
+
+  resolveJoinRequest: (requestId, decision) => {
+    const req = get().pendingJoinRequests.find((r) => r.id === requestId);
+    if (!req) return;
+
+    set((state) => {
+      const updatedRequests = state.pendingJoinRequests.map((r) =>
+        r.id === requestId ? { ...r, status: decision } : r
+      );
+
+      if (decision === 'active') {
+        const newMemberId = `demo-user-${req.id}`;
+        const alreadyExists = state.members.some((m) => m.id === newMemberId);
+        const newMember: DemoPerson = {
+          id: newMemberId,
+          name: req.name.replace(' (Kandydat)', ''),
+          email: req.email,
+          chameleonColor: req.chameleonColor,
+          role: 'member',
+          orgId: state.organization.orgId,
+          isDemo: true,
+          personaTitle: 'Nowy Członek Zespołu',
+          description: 'Dołączył z publicznej listy organizacji po akceptacji Lidera.',
+          xp: 100,
+        };
+        return {
+          pendingJoinRequests: updatedRequests,
+          members: alreadyExists ? state.members : [...state.members, newMember],
+        };
+      }
+
+      return { pendingJoinRequests: updatedRequests };
+    });
+  },
+
   getActiveUser: () => {
     const state = get();
     return (
@@ -253,8 +339,8 @@ export const useDemoStore = create<DemoStoreState>((set, get) => ({
       },
     }));
 
-    // If all members finished, recalculate graph automatically
-    if (updatedProgress.length >= get().members.length) {
+    // Recalculate graph when all members finished or when a post-stage evaluation is submitted
+    if (updatedProgress.length >= get().members.length || stageNumber > 2) {
       get().recalculateRelationshipGraph(stageNumber);
     }
   },
@@ -301,29 +387,55 @@ export const useDemoStore = create<DemoStoreState>((set, get) => ({
   recalculateRelationshipGraph: (stageNumber = 2) => {
     const { members, surveySubmissions, decisionData } = get();
 
-    // Collect peer evaluations for this stage
-    const stageSubs = surveySubmissions[stageNumber] || {};
+    // PRD 3.2: Sum mutual nomination points across ALL completed stages (2, 4, 5, etc.)
     const evaluations: PeerEvaluationAnswer[] = [];
     const leaderRatings: { evaluatorId: string; speechSpace: number; atmosphere: number }[] = [];
     let leaderMemberEvaluations: Record<string, { engagement: number; openness: number }> | undefined;
 
-    Object.values(stageSubs).forEach((sub) => {
-      if (sub.peerEvaluation) {
-        evaluations.push(sub.peerEvaluation);
-      }
-      if (sub.leaderRating) {
-        leaderRatings.push({
-          evaluatorId: sub.evaluatorId,
-          speechSpace: sub.leaderRating.speechSpace,
-          atmosphere: sub.leaderRating.atmosphere,
-        });
-      }
-      if (sub.memberRatings) {
-        leaderMemberEvaluations = sub.memberRatings;
-      }
-    });
+    const stageKeys = Object.keys(surveySubmissions)
+      .map(Number)
+      .sort((a, b) => a - b);
 
-    // Fall back to canonical evaluations if none submitted
+    const hasLaterStageSubmissions = stageKeys.some(
+      (k) => k > 2 && Object.keys(surveySubmissions[k] || {}).length > 0
+    );
+    const stage2Subs = surveySubmissions[2] || {};
+
+    // If recalculating with later stages (Stage 4 / Stage 5) and Stage 2 has no custom overrides,
+    // preserve Stage 2 canonical baseline so Stage 2 weights are never lost!
+    if (hasLaterStageSubmissions && Object.keys(stage2Subs).length === 0) {
+      evaluations.push(...DEMO_ALFA_PEER_EVALUATIONS_STAGE2);
+    }
+
+    for (const sKey of stageKeys) {
+      const subsForStage = surveySubmissions[sKey] || {};
+      Object.values(subsForStage).forEach((sub) => {
+        if (sub.peerEvaluation) {
+          evaluations.push(sub.peerEvaluation);
+        }
+        if (sub.leaderRating) {
+          const existingIdx = leaderRatings.findIndex((r) => r.evaluatorId === sub.evaluatorId);
+          const entry = {
+            evaluatorId: sub.evaluatorId,
+            speechSpace: sub.leaderRating.speechSpace,
+            atmosphere: sub.leaderRating.atmosphere,
+          };
+          if (existingIdx >= 0) {
+            leaderRatings[existingIdx] = entry;
+          } else {
+            leaderRatings.push(entry);
+          }
+        }
+        if (sub.memberRatings) {
+          leaderMemberEvaluations = {
+            ...(leaderMemberEvaluations || {}),
+            ...sub.memberRatings,
+          };
+        }
+      });
+    }
+
+    // Fall back to canonical evaluations if none submitted across any stage
     const activeEvals =
       evaluations.length > 0 ? evaluations : DEMO_ALFA_PEER_EVALUATIONS_STAGE2;
     const activeLeaderRatings =

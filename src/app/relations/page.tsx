@@ -191,7 +191,7 @@ export default function RelationsPage() {
               <p className="text-[10px] text-slate-400">Status Misji Dracula</p>
             </div>
             <Link
-              href="/path/stage5"
+              href="/path/stage5?game=dracula"
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-400 hover:to-purple-500 text-white font-black text-xs shadow-lg transition-all"
             >
               <Play size={14} />

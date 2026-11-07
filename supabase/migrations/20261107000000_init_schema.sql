@@ -247,6 +247,37 @@ $$;
 REVOKE EXECUTE ON FUNCTION public.is_org_member(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.is_org_member(UUID) TO authenticated;
 
+-- Automatically provision public.profiles row when a new user signs up in auth.users
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, chameleon_color)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.email, ''),
+    COALESCE(NEW.raw_user_meta_data->>'full_name', 'Użytkownik'),
+    COALESCE(NEW.raw_user_meta_data->>'chameleon_color', '#10B981')
+  )
+  ON CONFLICT (id) DO UPDATE
+    SET email = EXCLUDED.email,
+        full_name = EXCLUDED.full_name,
+        chameleon_color = EXCLUDED.chameleon_color,
+        updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
 -- ============================================================================
 -- 4. ROW LEVEL SECURITY (RLS) POLICIES FOR ALL 11 TABLES
 -- ============================================================================
@@ -289,7 +320,7 @@ CREATE POLICY profiles_update ON public.profiles
 -- 4.2 ORGANIZATIONS POLICIES
 CREATE POLICY org_select ON public.organizations
   FOR SELECT TO authenticated
-  USING (is_public = true OR type = 'public' OR (SELECT public.is_org_member(id)) OR created_by = (SELECT auth.uid()));
+  USING (is_public = true OR type = 'public' OR invite_code IS NOT NULL OR (SELECT public.is_org_member(id)) OR created_by = (SELECT auth.uid()));
 
 CREATE POLICY org_insert ON public.organizations
   FOR INSERT TO authenticated

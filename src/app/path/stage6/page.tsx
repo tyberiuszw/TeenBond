@@ -31,7 +31,7 @@ export default function Stage6Page() {
       stageBadge: 'Scenariusz Etapu 2 (Dodatkowy)',
       description:
         'Awaryjne lądowanie na oświetlonej stronie Księżyca 300 km od bazy matki. Uszeregujcie 15 ocalałych przedmiotów według klucza ekspertów NASA.',
-      href: '/path/stage2',
+      href: '/path/stage2?scenario=moon',
       icon: Rocket,
       accent: 'from-cyan-500 to-blue-600',
     },
@@ -41,7 +41,7 @@ export default function Stage6Page() {
       stageBadge: 'Scenariusz Etapu 2 (Powtórka)',
       description:
         'Dryfujecie na tratwie ratunkowej na południowym Pacyfiku po pożarze jachtu. Sprawdźcie synergię decyzyjną według klucza US Coast Guard.',
-      href: '/path/stage2',
+      href: '/path/stage2?scenario=lost_at_sea',
       icon: Compass,
       accent: 'from-emerald-500 to-teal-600',
     },
@@ -51,7 +51,7 @@ export default function Stage6Page() {
       stageBadge: 'Scenariusz Etapu 5 (Dodatkowy)',
       description:
         'Prezes James Mulligan zostaje zamordowany podczas pokazu fajerwerków o 20:05. Przeanalizujcie mapę rezydencji, sekretne przejście i 21 poszlak.',
-      href: '/path/stage5',
+      href: '/path/stage5?game=murder&scenario=techstream',
       icon: Building,
       accent: 'from-rose-500 to-amber-600',
     },
@@ -61,7 +61,7 @@ export default function Stage6Page() {
       stageBadge: 'Scenariusz Etapu 5 (Powtórka)',
       description:
         'Reżyser ginie na planie filmowym. 10 podejrzanych, 18 poszlak eliminacyjnych i tablica śledcza z czerwoną włóczką.',
-      href: '/path/stage5',
+      href: '/path/stage5?game=murder&scenario=movie',
       icon: Film,
       accent: 'from-amber-500 to-orange-600',
     },
@@ -71,7 +71,7 @@ export default function Stage6Page() {
       stageBadge: 'Scenariusz Etapu 5 (Międzyzespołowy)',
       description:
         'Podział na Czerwone Nietoperze i Czarne Koty, 2 osobne tablice TeenBoard oraz Strefa Negocjacji 1-na-1. Odkryjcie rozwiązanie Sobota 9:00!',
-      href: '/path/stage5',
+      href: '/path/stage5?game=dracula',
       icon: Skull,
       accent: 'from-purple-500 to-indigo-600',
     },

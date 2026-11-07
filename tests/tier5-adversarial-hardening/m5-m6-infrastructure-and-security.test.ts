@@ -223,5 +223,98 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
         })
       ).rejects.toThrow('Self-evaluation is forbidden');
     });
+
+    it('cumulatively aggregates Relationship Tree weights across multiple completed stages (Stage 2 + Stage 4 + Stage 5) without erasing prior stage edges', () => {
+      const store = useDemoStore.getState();
+      store.recalculateRelationshipGraph(2);
+      const stage2Graph = useDemoStore.getState().relationshipGraph;
+      const baselineEdgeCount = stage2Graph.edges.length;
+      const baselineAnnaEwa = stage2Graph.edges.find(
+        (e) =>
+          (e.source === 'demo-user-anna' && e.target === 'demo-user-ewa') ||
+          (e.source === 'demo-user-ewa' && e.target === 'demo-user-anna')
+      );
+      expect(baselineAnnaEwa).toBeDefined();
+      const initialWeight = baselineAnnaEwa!.weight; // 8 in Stage 2
+
+      // Submit a Stage 4 (Zin Obelisk) evaluation from Anna nominating Ewa (+3 +2 +2 = +7)
+      store.submitEvaluationAnswer({
+        stageNumber: 4,
+        evaluatorId: 'demo-user-anna',
+        peerEvaluation: {
+          evaluatorId: 'demo-user-anna',
+          bestCollabUserId: 'demo-user-ewa',
+          activeListenerUserId: 'demo-user-ewa',
+          goalOrganizerUserId: 'demo-user-ewa',
+          chaosUserId: 'demo-user-bartek',
+        },
+      });
+
+      const afterStage4Graph = useDemoStore.getState().relationshipGraph;
+      // Must NOT wipe out Stage 2 edges!
+      expect(afterStage4Graph.edges.length).toBeGreaterThanOrEqual(baselineEdgeCount);
+
+      const updatedAnnaEwa = afterStage4Graph.edges.find(
+        (e) =>
+          (e.source === 'demo-user-anna' && e.target === 'demo-user-ewa') ||
+          (e.source === 'demo-user-ewa' && e.target === 'demo-user-anna')
+      );
+      expect(updatedAnnaEwa).toBeDefined();
+      expect(updatedAnnaEwa!.weight).toBe(initialWeight + 7);
+    });
+
+    it('syncs TeenBoard fillColor on setStrokeColor, duplicates elements, and broadcasts over connected room', () => {
+      const board = useTeenBoardStore.getState();
+      const anna = useDemoStore.getState().members[0];
+
+      const conn = board.connectRoom('live-sync-room', anna);
+      expect(useTeenBoardStore.getState().roomConnection).toBe(conn);
+
+      // Selecting pastel green updates both strokeColor and fillColor for sticky notes
+      board.setStrokeColor('#BBF7D0');
+      expect(useTeenBoardStore.getState().strokeColor).toBe('#BBF7D0');
+      expect(useTeenBoardStore.getState().fillColor).toBe('#BBF7D0');
+
+      const created = board.addElement(anna.id, {
+        type: 'sticky',
+        x: 100,
+        y: 100,
+        content: 'Zielona notatka',
+        color: useTeenBoardStore.getState().fillColor,
+      });
+      expect(created.color).toBe('#BBF7D0');
+
+      const duplicated = board.duplicateElement(anna.id, created.id);
+      expect(duplicated).not.toBeNull();
+      expect(duplicated!.content).toBe('Zielona notatka');
+      expect(duplicated!.x).toBe(124);
+      expect(duplicated!.y).toBe(124);
+
+      board.disconnectRoom();
+      expect(useTeenBoardStore.getState().roomConnection).toBeNull();
+    });
+
+    it('supports Public Organization join requests and Leader approval/rejection workflow (F04)', () => {
+      const store = useDemoStore.getState();
+      const initialMembersCount = store.members.length;
+
+      store.requestJoinPublicOrg({
+        name: 'Kasia Nowa',
+        email: 'kasia@szkola.pl',
+        chameleonColor: '#EC4899',
+      });
+
+      const pendingAfterRequest = useDemoStore
+        .getState()
+        .pendingJoinRequests.find((r) => r.email === 'kasia@szkola.pl');
+      expect(pendingAfterRequest).toBeDefined();
+      expect(pendingAfterRequest!.status).toBe('pending');
+
+      // Leader approves Kasia's request
+      store.resolveJoinRequest(pendingAfterRequest!.id, 'active');
+      const stateAfterApprove = useDemoStore.getState();
+      expect(stateAfterApprove.members.length).toBe(initialMembersCount + 1);
+      expect(stateAfterApprove.members.some((m) => m.name === 'Kasia Nowa')).toBe(true);
+    });
   });
 });

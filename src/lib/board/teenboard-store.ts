@@ -13,14 +13,17 @@ import { LaserPointerTrail } from './laserTrailManager';
 import { normalizeCanvasTransform } from './coordinateUtils';
 import { sanitizeBoardElement } from './typographyUtils';
 import { isElementLockedByOther } from './objectLockManager';
+import { joinBoardRoom, BoardRoomConnection } from '@/lib/supabase/realtime';
+import { UserSession } from '@/types/auth';
 
-export { joinBoardRoom } from '@/lib/supabase/realtime';
+export { joinBoardRoom };
 
 export interface TeenBoardState {
   roomId: string;
   pages: BoardPage[];
   activePageId: string;
   isReadOnly: boolean;
+  roomConnection: BoardRoomConnection | null;
 
   // Board elements keyed by ID
   elements: Record<string, BoardElement>;
@@ -60,6 +63,7 @@ export interface TeenBoardState {
   addElement: (userId: string, partial: Partial<BoardElement>) => BoardElement;
   updateElement: (userId: string, id: string, updates: Partial<BoardElement>) => void;
   deleteElement: (userId: string, id: string) => void;
+  duplicateElement: (userId: string, id: string) => BoardElement | null;
   clearLines: (userId: string) => void;
   selectElement: (id: string, multi?: boolean) => void;
   clearSelection: () => void;
@@ -85,6 +89,9 @@ export interface TeenBoardState {
   insertCalculationAsSticky: (userId: string) => void;
 
   // Realtime peer sync
+  connectRoom: (roomId: string, user: UserSession) => BoardRoomConnection;
+  disconnectRoom: () => void;
+  broadcastCursorMove: (x: number, y: number, laserPoints?: Array<{ x: number; y: number; timestamp: number }>) => void;
   updatePeerCursor: (cursor: CursorState) => void;
   removePeerCursor: (userId: string) => void;
 }
@@ -107,6 +114,7 @@ export const useTeenBoardStore = create<TeenBoardState>((set, get) => {
     pages: [DEFAULT_PAGE],
     activePageId: 'page-1',
     isReadOnly: false,
+    roomConnection: null,
 
     elements: {},
     selectedIds: [],
@@ -126,7 +134,7 @@ export const useTeenBoardStore = create<TeenBoardState>((set, get) => {
     setRoomId: (roomId: string) => set({ roomId }),
     setReadOnly: (isReadOnly: boolean) => set({ isReadOnly }),
     setTool: (tool: ToolType) => set({ activeTool: tool, selectedIds: tool === 'select' ? get().selectedIds : [] }),
-    setStrokeColor: (strokeColor: string) => set({ strokeColor }),
+    setStrokeColor: (strokeColor: string) => set({ strokeColor, fillColor: strokeColor }),
     setFillColor: (fillColor: string) => set({ fillColor }),
     setStrokeWidth: (strokeWidth: number) => set({ strokeWidth }),
 
@@ -164,7 +172,7 @@ export const useTeenBoardStore = create<TeenBoardState>((set, get) => {
     },
 
     addElement: (userId: string, partial: Partial<BoardElement>) => {
-      const { activePageId, undoManager, isReadOnly } = get();
+      const { activePageId, undoManager, isReadOnly, roomConnection } = get();
       if (isReadOnly) return sanitizeBoardElement(partial);
 
       const sanitized = sanitizeBoardElement({
@@ -182,11 +190,15 @@ export const useTeenBoardStore = create<TeenBoardState>((set, get) => {
         },
       }));
 
+      if (roomConnection) {
+        roomConnection.broadcastElementUpdate(sanitized);
+      }
+
       return sanitized;
     },
 
     updateElement: (userId: string, id: string, updates: Partial<BoardElement>) => {
-      const { elements, undoManager, isReadOnly } = get();
+      const { elements, undoManager, isReadOnly, roomConnection } = get();
       if (isReadOnly) return;
       const el = elements[id];
       if (!el) return;
@@ -202,24 +214,49 @@ export const useTeenBoardStore = create<TeenBoardState>((set, get) => {
           [id]: updated,
         },
       }));
+
+      if (roomConnection) {
+        roomConnection.broadcastElementUpdate(updated);
+      }
     },
 
     deleteElement: (userId: string, id: string) => {
-      const { elements, undoManager, isReadOnly, selectedIds } = get();
+      const { elements, undoManager, isReadOnly, selectedIds, roomConnection } = get();
       if (isReadOnly) return;
       const el = elements[id];
       if (!el) return;
       if (isElementLockedByOther(el, userId)) return;
 
       undoManager.deleteElement(userId, id);
+      const deletedEl = { ...el, deleted: true };
 
       set((state) => {
         const next = { ...state.elements };
-        next[id] = { ...el, deleted: true };
+        next[id] = deletedEl;
         return {
           elements: next,
           selectedIds: selectedIds.filter((selId) => selId !== id),
         };
+      });
+
+      if (roomConnection) {
+        roomConnection.broadcastElementUpdate(deletedEl);
+      }
+    },
+
+    duplicateElement: (userId: string, id: string) => {
+      const { elements, isReadOnly, addElement } = get();
+      if (isReadOnly) return null;
+      const el = elements[id];
+      if (!el || el.deleted) return null;
+
+      return addElement(userId, {
+        ...el,
+        id: `${el.id}-dup-${Date.now()}`,
+        x: el.x + 24,
+        y: el.y + 24,
+        lockedBy: null,
+        lockedAt: null,
       });
     },
 
@@ -275,7 +312,7 @@ export const useTeenBoardStore = create<TeenBoardState>((set, get) => {
     },
 
     acquireLock: (userId: string, elementId: string) => {
-      const { elements } = get();
+      const { elements, roomConnection } = get();
       const el = elements[elementId];
       if (!el) return false;
       if (isElementLockedByOther(el, userId)) return false;
@@ -291,11 +328,14 @@ export const useTeenBoardStore = create<TeenBoardState>((set, get) => {
           [elementId]: updated,
         },
       }));
+      if (roomConnection) {
+        roomConnection.broadcastElementLock(elementId, true);
+      }
       return true;
     },
 
     releaseLock: (userId: string, elementId: string) => {
-      const { elements } = get();
+      const { elements, roomConnection } = get();
       const el = elements[elementId];
       if (!el || el.lockedBy !== userId) return;
 
@@ -310,6 +350,9 @@ export const useTeenBoardStore = create<TeenBoardState>((set, get) => {
           [elementId]: updated,
         },
       }));
+      if (roomConnection) {
+        roomConnection.broadcastElementLock(elementId, false);
+      }
     },
 
     undo: (userId: string) => {
@@ -442,6 +485,64 @@ export const useTeenBoardStore = create<TeenBoardState>((set, get) => {
         content: `Obliczenia:\n${state.expression || state.result}`,
         color: '#FEF08A',
       });
+    },
+
+    connectRoom: (roomId: string, user: UserSession) => {
+      const existing = get().roomConnection;
+      if (existing) {
+        existing.leaveRoom();
+      }
+      const conn = joinBoardRoom(roomId, user, {
+        onCursorUpdate: (cursor) => {
+          if (cursor.userId !== user.id) {
+            get().updatePeerCursor(cursor);
+          }
+        },
+        onElementLock: ({ elementId, userId: lockUser, locked, timestamp }) => {
+          if (lockUser === user.id) return;
+          set((state) => {
+            const el = state.elements[elementId];
+            if (!el) return state;
+            return {
+              elements: {
+                ...state.elements,
+                [elementId]: {
+                  ...el,
+                  lockedBy: locked ? lockUser : null,
+                  lockedAt: locked ? timestamp : null,
+                },
+              },
+            };
+          });
+        },
+        onElementUpdate: (remoteElement) => {
+          const sanitized = sanitizeBoardElement(remoteElement);
+          get().undoManager.elements.set(sanitized.id, sanitized);
+          set((state) => ({
+            elements: {
+              ...state.elements,
+              [sanitized.id]: sanitized,
+            },
+          }));
+        },
+      });
+      set({ roomId: conn.roomId, roomConnection: conn });
+      return conn;
+    },
+
+    disconnectRoom: () => {
+      const existing = get().roomConnection;
+      if (existing) {
+        existing.leaveRoom();
+      }
+      set({ roomConnection: null });
+    },
+
+    broadcastCursorMove: (x, y, laserPoints) => {
+      const { roomConnection } = get();
+      if (roomConnection) {
+        roomConnection.broadcastCursor(x, y, laserPoints);
+      }
     },
 
     updatePeerCursor: (cursor: CursorState) => {

@@ -50,8 +50,12 @@ export const BoardCanvas: React.FC<BoardCanvasProps> = ({
     addElement,
     updateElement,
     deleteElement,
+    duplicateElement,
     acquireLock,
     releaseLock,
+    undo,
+    redo,
+    broadcastCursorMove,
     laserTrail,
     cursors,
     activePageId,
@@ -90,11 +94,32 @@ export const BoardCanvas: React.FC<BoardCanvasProps> = ({
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // Keyboard space listener for panning
+  // Keyboard listener for panning, delete/duplicate selected elements, and personal undo/redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const targetTag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      if (targetTag === 'input' || targetTag === 'textarea' || (e.target as HTMLElement | null)?.isContentEditable) {
+        return;
+      }
+
       if (e.code === 'Space' && !spacePressedRef.current) {
         spacePressedRef.current = true;
+      }
+
+      if (isReadOnly) return;
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.length > 0) {
+        e.preventDefault();
+        selectedIds.forEach((id) => deleteElement(currentUserId, id));
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo(currentUserId);
+      } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo(currentUserId);
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && selectedIds.length > 0) {
+        e.preventDefault();
+        selectedIds.forEach((id) => duplicateElement(currentUserId, id));
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -109,7 +134,7 @@ export const BoardCanvas: React.FC<BoardCanvasProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [isReadOnly, selectedIds, currentUserId, deleteElement, duplicateElement, undo, redo]);
 
   // Zoom-to-pointer via wheel
   const handleWheel = useCallback(
@@ -228,6 +253,16 @@ export const BoardCanvas: React.FC<BoardCanvasProps> = ({
     const screenX = e.clientX - rect.left;
     const screenY = e.clientY - rect.top;
     const worldPos = screenToWorld(screenX, screenY, camera);
+
+    // Broadcast live cursor position (and laser trail if active) to Realtime room
+    const nowTs = Date.now();
+    broadcastCursorMove(
+      worldPos.x,
+      worldPos.y,
+      activeTool === 'laser' && isInteractingRef.current
+        ? laserTrail.getActivePoints(nowTs).map((p) => ({ x: p.x, y: p.y, timestamp: nowTs }))
+        : undefined
+    );
 
     // Pan camera
     if (isPanningRef.current) {

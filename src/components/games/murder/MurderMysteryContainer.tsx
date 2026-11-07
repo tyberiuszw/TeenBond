@@ -21,6 +21,8 @@ import { VerdictVotingModal } from './VerdictVotingModal';
 import { DetectiveDrawer } from './DetectiveDrawer';
 import { MurderDebriefModal } from './MurderDebriefModal';
 import { EvaluationSurveyModal } from '@/components/relations/EvaluationSurveyModal';
+import { TeenBoard } from '@/components/board/TeenBoard';
+import { BoardElement } from '@/types/board';
 import { useDemoStore } from '@/lib/demo-store';
 import {
   Gavel,
@@ -30,13 +32,57 @@ import {
   Trophy,
   Pin,
   RefreshCw,
+  Layout,
 } from 'lucide-react';
 
-export const MurderMysteryContainer: React.FC = () => {
+interface MurderMysteryContainerProps {
+  initialScenario?: MurderScenarioId;
+}
+
+const INVESTIGATION_BOARD_TEMPLATE: BoardElement[] = [
+  {
+    id: 'murder-tpl-1',
+    type: 'sticky',
+    x: 80,
+    y: 110,
+    width: 240,
+    height: 200,
+    content: '📋 LISTA PODEJRZANYCH\n• Kto miał motyw?\n• Kto nie ma alibi w chwili morderstwa?',
+    color: '#FEF08A',
+    createdBy: 'demo-user-anna',
+  },
+  {
+    id: 'murder-tpl-2',
+    type: 'sticky',
+    x: 360,
+    y: 110,
+    width: 240,
+    height: 200,
+    content: '⏱️ OŚ CZASU (19:30 - 20:15)\n• 19:45 - Ostatnie spotkanie\n• 20:05 - Moment zbrodni',
+    color: '#BAE6FD',
+    createdBy: 'demo-user-bartek',
+  },
+  {
+    id: 'murder-tpl-3',
+    type: 'sticky',
+    x: 640,
+    y: 110,
+    width: 240,
+    height: 200,
+    content: '🗺️ MAPA LOKACJI & DOWODY\n• Garderoba / Gabinet\n• Narzędzie zbrodni i ślady',
+    color: '#BBF7D0',
+    createdBy: 'demo-user-celina',
+  },
+];
+
+export const MurderMysteryContainer: React.FC<MurderMysteryContainerProps> = ({
+  initialScenario = 'movie',
+}) => {
   const { members, activeUserId, getActiveUser, murderSolved, setMurderSolved } = useDemoStore();
   const activeUser = getActiveUser();
 
-  const [scenarioId, setScenarioId] = useState<MurderScenarioId>('movie');
+  const [scenarioId, setScenarioId] = useState<MurderScenarioId>(initialScenario);
+  const [boardView, setBoardView] = useState<'polaroids' | 'teenboard'>('polaroids');
   const [selectedSuspectId, setSelectedSuspectId] = useState<string | null>(null);
 
   // Red yarn connections
@@ -63,7 +109,7 @@ export const MurderMysteryContainer: React.FC = () => {
   };
 
   const [votes, setVotes] = useState<Record<string, MurderVerdictSubmission>>(() =>
-    buildDefaultTeammateVotes('movie')
+    buildDefaultTeammateVotes(initialScenario)
   );
 
   const characters = scenarioId === 'movie' ? MOVIE_CHARACTERS : TECHSTREAM_CHARACTERS;
@@ -164,6 +210,32 @@ export const MurderMysteryContainer: React.FC = () => {
           </button>
         </div>
 
+        {/* Board View Mode Switcher (Polaroids Corkboard vs TeenBoard Investigation Template) */}
+        <div className="hidden lg:flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 backdrop-blur-md border border-slate-700/80 shadow-xl text-white">
+          <button
+            onClick={() => setBoardView('polaroids')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              boardView === 'polaroids'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            <Pin size={13} />
+            <span>Karty Podejrzanych</span>
+          </button>
+          <button
+            onClick={() => setBoardView('teenboard')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              boardView === 'teenboard'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            <Layout size={13} />
+            <span>Tablica TeenBoard (Oś Czasu)</span>
+          </button>
+        </div>
+
         {/* Voting trigger button */}
         <button
           onClick={() => setShowVotingModal(true)}
@@ -184,39 +256,51 @@ export const MurderMysteryContainer: React.FC = () => {
         )}
       </div>
 
-      {/* Main Corkboard Surface with SVG Yarn */}
-      <div className="relative flex-1 w-full h-full overflow-auto p-8 bg-[#A57C32]/15">
-        {/* Red Yarn SVG Layer */}
-        <RedYarnLayer
-          threads={threads}
-          pinCoords={pinCoords}
-          onRemoveThread={(id) => setThreads((prev) => prev.filter((t) => t.id !== id))}
-        />
+      {/* Main Corkboard Surface with SVG Yarn OR Interactive TeenBoard Template */}
+      {boardView === 'polaroids' ? (
+        <div className="relative flex-1 w-full h-full overflow-auto p-8 bg-[#A57C32]/15">
+          {/* Red Yarn SVG Layer */}
+          <RedYarnLayer
+            threads={threads}
+            pinCoords={pinCoords}
+            onRemoveThread={(id) => setThreads((prev) => prev.filter((t) => t.id !== id))}
+          />
 
-        {/* Suspect Polaroids */}
-        {characters.map((char) => {
-          const pos = suspectPositions[char.id] || { x: 100, y: 100 };
-          return (
-            <SuspectPolaroid
-              key={char.id}
-              suspect={char}
-              x={pos.x}
-              y={pos.y}
-              isSelected={selectedSuspectId === char.id}
-              onSelect={() => setSelectedSuspectId(char.id)}
-              onPinClick={handlePinClick}
-            />
-          );
-        })}
+          {/* Suspect Polaroids */}
+          {characters.map((char) => {
+            const pos = suspectPositions[char.id] || { x: 100, y: 100 };
+            return (
+              <SuspectPolaroid
+                key={char.id}
+                suspect={char}
+                x={pos.x}
+                y={pos.y}
+                isSelected={selectedSuspectId === char.id}
+                onSelect={() => setSelectedSuspectId(char.id)}
+                onPinClick={handlePinClick}
+              />
+            );
+          })}
 
-        {/* Active Pin Hint */}
-        {activePinFrom && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-slate-900 border border-rose-500 text-rose-300 text-xs font-bold shadow-2xl flex items-center gap-2 animate-bounce">
-            <Pin size={14} />
-            <span>Kliknij drugą pinezkę, aby połączyć czerwoną nicią powiązanie!</span>
-          </div>
-        )}
-      </div>
+          {/* Active Pin Hint */}
+          {activePinFrom && (
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-slate-900 border border-rose-500 text-rose-300 text-xs font-bold shadow-2xl flex items-center gap-2 animate-bounce">
+              <Pin size={14} />
+              <span>Kliknij drugą pinezkę, aby połączyć czerwoną nicią powiązanie!</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="relative flex-1 w-full h-full">
+          <TeenBoard
+            currentUserId={activeUserId}
+            roomId={`murder-mystery-${scenarioId}`}
+            background="corkboard"
+            mode="corkboard"
+            initialElements={INVESTIGATION_BOARD_TEMPLATE}
+          />
+        </div>
+      )}
 
       {/* Detective Notebook Drawer */}
       <DetectiveDrawer
