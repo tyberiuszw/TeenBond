@@ -4,12 +4,14 @@ import path from 'path';
 import { NextRequest } from 'next/server';
 
 const mockCreateServerClient = vi.fn();
+const mockCreateBrowserClient = vi.fn();
 
 vi.mock('@supabase/ssr', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@supabase/ssr')>();
   return {
     ...actual,
     createServerClient: (...args: any[]) => mockCreateServerClient(...args),
+    createBrowserClient: (...args: any[]) => mockCreateBrowserClient(...args),
   };
 });
 
@@ -98,6 +100,15 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
       expect(sql).toContain('GRANT USAGE ON SCHEMA public TO anon, authenticated;');
       expect(sql).toContain('GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;');
       expect(sql).toContain('GRANT SELECT, INSERT, UPDATE ON public.relationship_edges TO authenticated;');
+      expect(sql).toContain('CREATE POLICY org_select_anon ON public.organizations');
+
+      // Must prevent non-leader/non-creator privilege escalation in team_members_insert
+      const teamMembersInsertMatch = sql.match(
+        /CREATE POLICY team_members_insert ON public\.team_members[\s\S]*?;/
+      );
+      expect(teamMembersInsertMatch).toBeTruthy();
+      expect(teamMembersInsertMatch![0]).toContain("role = 'member'");
+      expect(teamMembersInsertMatch![0]).toContain('o.created_by = (SELECT auth.uid())');
 
       // Every UPDATE policy must include both USING and WITH CHECK
       const updatePolicyBlocks = sql.split(/CREATE POLICY /i).slice(1).filter((b) => /FOR UPDATE/i.test(b));
@@ -119,6 +130,7 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
     afterEach(() => {
       process.env = { ...originalEnv };
       mockCreateServerClient.mockReset();
+      mockCreateBrowserClient.mockReset();
     });
 
     it('detects Supabase configuration with either NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY and rejects placeholders', () => {
@@ -131,13 +143,23 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'your-anon-key-here';
       expect(isSupabaseConfigured()).toBe(false);
 
+      // Must reject .env.example placeholder for NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY and fall back to valid NEXT_PUBLIC_SUPABASE_ANON_KEY
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://xyzcompany.supabase.co';
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'your-publishable-key-here';
+      delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      expect(getSupabaseAnonOrPublishableKey()).toBeUndefined();
+      expect(isSupabaseConfigured()).toBe(false);
+
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.real';
+      expect(getSupabaseAnonOrPublishableKey()).toBe('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.real');
+      expect(isSupabaseConfigured()).toBe(true);
+
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_real_key_123';
       expect(getSupabaseAnonOrPublishableKey()).toBe('sb_publishable_real_key_123');
       expect(isSupabaseConfigured()).toBe(true);
     });
 
-    it('accurately classifies protected routes, auth routes, and sanitizes open redirects', () => {
+    it('accurately classifies protected routes, auth routes, and sanitizes open redirects including control-char bypasses', () => {
       const protectedPaths = [
         '/path',
         '/path/stage1',
@@ -163,18 +185,32 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
       expect(isAuthRoute('/login-help')).toBe(false);
 
       expect(sanitizeRedirectPath('/relations')).toBe('/relations');
+      expect(sanitizeRedirectPath('/path/stage5?game=dracula')).toBe('/path/stage5?game=dracula');
       expect(sanitizeRedirectPath('//evil.example.com')).toBe('/path');
       expect(sanitizeRedirectPath('/\\evil.example.com')).toBe('/path');
+      expect(sanitizeRedirectPath('/\t/evil.example.com')).toBe('/path');
+      expect(sanitizeRedirectPath('/\r\n/evil.example.com')).toBe('/path');
       expect(sanitizeRedirectPath('https://evil.example.com')).toBe('/path');
       expect(sanitizeRedirectPath(null)).toBe('/path');
       expect(sanitizeRedirectPath('')).toBe('/path');
     });
 
-    it('redirects unauthenticated requests on protected routes to /login with next param when Supabase is configured and not in Demo mode', async () => {
+    it('redirects unauthenticated requests on protected routes to /login with next param, preserving cookie options and query params', async () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://xyzcompany.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.real';
 
-      const getUserMock = vi.fn().mockResolvedValue({ data: { user: null }, error: null });
+      const getUserMock = vi.fn().mockImplementation(async () => {
+        const lastCall = mockCreateServerClient.mock.calls.at(-1);
+        const cookieHandlers = lastCall?.[2]?.cookies;
+        cookieHandlers?.setAll?.([
+          {
+            name: 'sb-xyz-auth-token',
+            value: '',
+            options: { maxAge: 0, path: '/', sameSite: 'lax', httpOnly: true },
+          },
+        ]);
+        return { data: { user: null }, error: null };
+      });
       const getSessionSpy = vi.fn();
       mockCreateServerClient.mockReturnValue({
         auth: {
@@ -183,7 +219,7 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
         },
       } as any);
 
-      for (const route of ['/path', '/path/stage1', '/path/stage5', '/team', '/relations', '/onboarding']) {
+      for (const route of ['/path', '/path/stage1', '/path/stage5?game=dracula', '/team', '/relations', '/onboarding']) {
         const req = new NextRequest(`https://teenbond.app${route}`);
         const res = await updateSession(req);
 
@@ -194,6 +230,13 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
         expect(redirectUrl.pathname).toBe('/login');
         expect(redirectUrl.searchParams.get('next')).toBe(route);
         expect(redirectUrl.searchParams.get('redirectTo')).toBe(route);
+        // Must not leak route query params (like game=dracula) onto /login directly
+        expect(redirectUrl.searchParams.get('game')).toBeNull();
+
+        // Must preserve cookie options (such as maxAge: 0, httpOnly: true) across redirect
+        const clearedCookie = res.cookies.get('sb-xyz-auth-token');
+        expect(clearedCookie?.maxAge).toBe(0);
+        expect(clearedCookie?.httpOnly).toBe(true);
       }
 
       // Must validate token with getUser(), never getSession()
@@ -201,7 +244,7 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
       expect(getSessionSpy).not.toHaveBeenCalled();
     });
 
-    it('redirects authenticated users away from /login and /register to /path (or sanitized next param)', async () => {
+    it('redirects authenticated users away from /login and /register to /path (or sanitized next param with query string intact)', async () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://xyzcompany.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.real';
 
@@ -220,10 +263,14 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
       expect(loginRes.status).toBe(307);
       expect(new URL(loginRes.headers.get('location')!).pathname).toBe('/path');
 
-      const loginWithNextReq = new NextRequest('https://teenbond.app/login?next=/relations');
+      const loginWithNextReq = new NextRequest(
+        'https://teenbond.app/login?next=%2Fpath%2Fstage5%3Fgame%3Ddracula'
+      );
       const loginWithNextRes = await updateSession(loginWithNextReq);
       expect(loginWithNextRes.status).toBe(307);
-      expect(new URL(loginWithNextRes.headers.get('location')!).pathname).toBe('/relations');
+      const nextUrl = new URL(loginWithNextRes.headers.get('location')!);
+      expect(nextUrl.pathname).toBe('/path/stage5');
+      expect(nextUrl.searchParams.get('game')).toBe('dracula');
 
       // Prevents redirect loop if next points to /login or /register
       const loginLoopReq = new NextRequest('https://teenbond.app/register?next=/login');
@@ -292,9 +339,24 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
       expect(failedRes.headers.get('location')).toBe(
         'https://teenbond.app/login?error=auth_callback_failed'
       );
+
+      // 5. Thrown exception during exchangeCodeForSession redirects cleanly instead of 500
+      exchangeMock.mockRejectedValueOnce(new Error('Network error'));
+      const thrownReq = new Request('https://teenbond.app/auth/callback?code=throw_code');
+      const thrownRes = await authCallbackGet(thrownReq);
+      expect(thrownRes.status).toBe(307);
+      expect(thrownRes.headers.get('location')).toBe(
+        'https://teenbond.app/login?error=auth_callback_failed'
+      );
+
+      // 6. Auth route in next param (/login) normalizes to /path
+      const loopCallbackReq = new Request('https://teenbond.app/auth/callback?code=pkce_code_123&next=/login');
+      const loopCallbackRes = await authCallbackGet(loopCallbackReq);
+      expect(loopCallbackRes.status).toBe(307);
+      expect(loopCallbackRes.headers.get('location')).toBe('https://teenbond.app/path');
     });
 
-    it('clears session and disables demo mode on useSessionStore.logout()', () => {
+    it('automatically disables Demo Mode when a real non-demo session is set and clears session on logout()', () => {
       useDemoStore.getState().enableDemoMode('demo-user-anna');
       expect(useDemoStore.getState().isDemoMode).toBe(true);
 
@@ -308,10 +370,48 @@ describe('Milestone 5 & 6: Cloud Infrastructure, Supabase RLS Security & E2E Har
         isDemo: false,
       });
       expect(useSessionStore.getState().session).not.toBeNull();
+      // Setting a real session must immediately disable Demo Mode so real user data is used
+      expect(useDemoStore.getState().isDemoMode).toBe(false);
+
+      useDemoStore.getState().enableDemoMode('demo-user-anna');
+      expect(useDemoStore.getState().isDemoMode).toBe(true);
 
       useSessionStore.getState().logout();
       expect(useSessionStore.getState().session).toBeNull();
       expect(useDemoStore.getState().isDemoMode).toBe(false);
+    });
+
+    it('hydrates authenticated session from supabase.auth.getUser() when not in Demo Mode', async () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://xyzcompany.supabase.co';
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.real';
+      useDemoStore.getState().disableDemoMode();
+      useSessionStore.getState().setSession(null);
+
+      mockCreateBrowserClient.mockReturnValue({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({
+            data: {
+              user: {
+                id: 'hydrated-user-1',
+                email: 'zosia@teenbond.pl',
+                user_metadata: {
+                  full_name: 'Zosia Liderka',
+                  chameleon_color: '#EC4899',
+                },
+              },
+            },
+            error: null,
+          }),
+          signOut: vi.fn().mockResolvedValue({ error: null }),
+        },
+      } as any);
+
+      const hydrated = await useSessionStore.getState().hydrateSession();
+      expect(hydrated).not.toBeNull();
+      expect(hydrated?.id).toBe('hydrated-user-1');
+      expect(hydrated?.name).toBe('Zosia Liderka');
+      expect(hydrated?.chameleonColor).toBe('#EC4899');
+      expect(useSessionStore.getState().session?.email).toBe('zosia@teenbond.pl');
     });
   });
 

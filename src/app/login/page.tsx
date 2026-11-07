@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDemoStore } from '@/lib/demo-store';
 import { Logo } from '@/components/brand/Logo';
 import { Sparkles, ArrowRight, Lock, Mail, AlertCircle } from 'lucide-react';
 import { isSupabaseConfigured, createClient } from '@/lib/supabase/client';
+import { isAuthRoute, sanitizeRedirectPath } from '@/lib/supabase/middleware';
 import { useSessionStore } from '@/lib/session-store';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { enableDemoMode } = useDemoStore();
+  const { enableDemoMode, disableDemoMode } = useDemoStore();
   const { setSession } = useSessionStore();
 
   const [email, setEmail] = useState('');
@@ -19,13 +20,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('error') === 'auth_callback_failed') {
+        setErrorMsg(
+          'Weryfikacja linku autoryzacyjnego nie powiodła się lub link wygasł. Zaloguj się ponownie.'
+        );
+      }
+    }
+  }, []);
+
   const getRedirectDestination = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const next = params.get('next') || params.get('redirectTo');
-      if (next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')) {
-        return next;
-      }
+      const rawNext = params.get('next') || params.get('redirectTo');
+      const safe = sanitizeRedirectPath(rawNext, '/path');
+      const pathnameOnly = safe.split('?')[0];
+      return isAuthRoute(pathnameOnly) ? '/path' : safe;
     }
     return '/path';
   };
@@ -62,6 +74,7 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        disableDemoMode();
         setSession({
           id: data.user.id,
           email: data.user.email || '',

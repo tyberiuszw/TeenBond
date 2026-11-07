@@ -321,6 +321,10 @@ CREATE POLICY profiles_update ON public.profiles
   WITH CHECK ((SELECT auth.uid()) = id);
 
 -- 4.2 ORGANIZATIONS POLICIES
+CREATE POLICY org_select_anon ON public.organizations
+  FOR SELECT TO anon
+  USING (is_public = true OR type = 'public');
+
 CREATE POLICY org_select ON public.organizations
   FOR SELECT TO authenticated
   USING (is_public = true OR type = 'public' OR invite_code IS NOT NULL OR (SELECT public.is_org_member(id)) OR created_by = (SELECT auth.uid()));
@@ -341,7 +345,20 @@ CREATE POLICY team_members_select ON public.team_members
 
 CREATE POLICY team_members_insert ON public.team_members
   FOR INSERT TO authenticated
-  WITH CHECK (user_id = (SELECT auth.uid()) OR (SELECT public.is_org_leader(organization_id)));
+  WITH CHECK (
+    (SELECT public.is_org_leader(organization_id))
+    OR (
+      user_id = (SELECT auth.uid())
+      AND (
+        role = 'member'
+        OR EXISTS (
+          SELECT 1 FROM public.organizations o
+          WHERE o.id = public.team_members.organization_id
+            AND o.created_by = (SELECT auth.uid())
+        )
+      )
+    )
+  );
 
 CREATE POLICY team_members_update ON public.team_members
   FOR UPDATE TO authenticated

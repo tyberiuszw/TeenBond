@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '../brand/Logo';
@@ -8,6 +8,7 @@ import { ChameleonAvatar } from '../brand/ChameleonAvatar';
 import { RoleBadge } from '../ui/RoleBadge';
 import { useDemoStore } from '@/lib/demo-store';
 import { useSessionStore } from '@/lib/session-store';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 import {
   Compass,
   Users,
@@ -27,7 +28,13 @@ export const Navbar: React.FC = () => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const { isDemoMode, getActiveUser, organization, disableDemoMode } = useDemoStore();
-  const { session, logout } = useSessionStore();
+  const { session, hydrateSession, logout } = useSessionStore();
+
+  useEffect(() => {
+    if (!isDemoMode && !session && isSupabaseConfigured()) {
+      void hydrateSession();
+    }
+  }, [isDemoMode, session, hydrateSession]);
 
   const activeUser = isDemoMode ? getActiveUser() : session;
   const activeRole = activeUser?.role || 'member';

@@ -33,15 +33,28 @@ export function sanitizeRedirectPath(
     return fallback;
   }
   const trimmed = nextPath.trim();
-  if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.startsWith('/\\')) {
+  if (
+    !trimmed.startsWith('/') ||
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('/\\') ||
+    /[\x00-\x1f\x7f\\]/.test(trimmed)
+  ) {
     return fallback;
   }
-  return trimmed;
+  try {
+    const parsed = new URL(trimmed, 'http://localhost');
+    if (parsed.origin !== 'http://localhost') {
+      return fallback;
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return fallback;
+  }
 }
 
 function copyResponseCookiesAndHeaders(source: NextResponse, target: NextResponse): NextResponse {
   source.cookies.getAll().forEach((cookie) => {
-    target.cookies.set(cookie.name, cookie.value);
+    target.cookies.set(cookie);
   });
   for (const header of ['cache-control', 'expires', 'pragma']) {
     const value = source.headers.get(header);
@@ -104,10 +117,10 @@ export async function updateSession(request: NextRequest) {
   const protectedRoute = isProtectedRoute(pathname);
 
   if (!user && protectedRoute && !isDemo) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = '/login';
-    redirectUrl.searchParams.set('next', pathname);
-    redirectUrl.searchParams.set('redirectTo', pathname);
+    const nextTarget = `${pathname}${request.nextUrl.search}`;
+    const redirectUrl = new URL('/login', request.url);
+    redirectUrl.searchParams.set('next', nextTarget);
+    redirectUrl.searchParams.set('redirectTo', nextTarget);
     return copyResponseCookiesAndHeaders(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 
@@ -115,11 +128,10 @@ export async function updateSession(request: NextRequest) {
     const requestedNext =
       request.nextUrl.searchParams.get('next') || request.nextUrl.searchParams.get('redirectTo');
     const safeDestination = sanitizeRedirectPath(requestedNext, '/path');
-    const targetPath = isAuthRoute(safeDestination) ? '/path' : safeDestination;
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = targetPath;
-    redirectUrl.searchParams.delete('next');
-    redirectUrl.searchParams.delete('redirectTo');
+    const parsedDestination = new URL(safeDestination, request.url);
+    const redirectUrl = isAuthRoute(parsedDestination.pathname)
+      ? new URL('/path', request.url)
+      : parsedDestination;
     return copyResponseCookiesAndHeaders(supabaseResponse, NextResponse.redirect(redirectUrl));
   }
 

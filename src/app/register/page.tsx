@@ -13,7 +13,7 @@ import { useSessionStore } from '@/lib/session-store';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { enableDemoMode } = useDemoStore();
+  const { enableDemoMode, disableDemoMode } = useDemoStore();
   const { setSession } = useSessionStore();
 
   const [fullName, setFullName] = useState('');
@@ -65,6 +65,7 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
+        disableDemoMode();
         setSession({
           id: data.user.id,
           email: data.user.email || '',

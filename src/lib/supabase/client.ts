@@ -1,11 +1,27 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/types/database';
 
-export function getSupabaseAnonOrPublishableKey(): string | undefined {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+export function isValidSupabaseKey(key: string | undefined): key is string {
+  if (!key || typeof key !== 'string') return false;
+  const trimmed = key.trim();
+  return Boolean(
+    trimmed.length > 0 &&
+      !trimmed.includes('your-publishable-key') &&
+      !trimmed.includes('your-anon-key') &&
+      !trimmed.includes('placeholder')
   );
+}
+
+export function getSupabaseAnonOrPublishableKey(): string | undefined {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (isValidSupabaseKey(publishableKey)) {
+    return publishableKey;
+  }
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (isValidSupabaseKey(anonKey)) {
+    return anonKey;
+  }
+  return undefined;
 }
 
 export function isSupabaseConfigured(): boolean {
@@ -17,8 +33,7 @@ export function isSupabaseConfigured(): boolean {
       url.startsWith('http') &&
       !url.includes('your-project') &&
       !url.includes('placeholder') &&
-      !key.includes('your-anon-key') &&
-      !key.includes('placeholder')
+      isValidSupabaseKey(key)
   );
 }
 

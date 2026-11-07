@@ -94,6 +94,13 @@ function getSavedMotivators(): Record<string, string[]> {
   return DEMO_MOTIVATORS_RANKINGS;
 }
 
+function hasDemoCookie(): boolean {
+  if (typeof document !== 'undefined' && typeof document.cookie === 'string') {
+    return /(?:^|;\s*)(?:tb_demo_mode|teenbond_demo)=(?:true|1)(?:;|$)/.test(document.cookie);
+  }
+  return false;
+}
+
 function getSavedDemoMode(): boolean {
   if (typeof window !== 'undefined') {
     try {
@@ -101,7 +108,7 @@ function getSavedDemoMode(): boolean {
       if (saved !== null) return saved === 'true';
     } catch {}
   }
-  return false;
+  return hasDemoCookie();
 }
 
 export const useDemoStore = create<DemoStoreState>((set, get) => ({
