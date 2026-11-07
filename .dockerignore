@@ -4,6 +4,7 @@ node_modules
 .gitignore
 .env*.local
 .agents
+Opisy
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
